@@ -1,0 +1,21 @@
+
+{
+  "Rules": [
+    {
+      "ID": "terraform-state-cleanup",
+      "Status": "Enabled",
+      "Filter": {},
+      "NoncurrentVersionExpiration": {
+        "NoncurrentDays": 90,
+        "NewerNoncurrentVersions": 5
+      },
+      "AbortIncompleteMultipartUpload": {
+        "DaysAfterInitiation": 7
+      },
+      "Expiration": {
+        "ExpiredObjectDeleteMarker": true
+      }
+    }
+  ]
+}
+

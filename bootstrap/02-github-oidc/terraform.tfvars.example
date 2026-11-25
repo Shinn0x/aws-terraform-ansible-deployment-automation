@@ -1,0 +1,15 @@
+# Copy to terraform.tfvars and change what you need.
+# Every value below is already the default in variables.tf.
+
+aws_region  = "ap-southeast-1"
+environment = "dev"
+
+# Look up the numeric IDs with:
+#   gh api repos/OWNER/REPO --jq '{repo_id: .id, owner_id: .owner.id}'
+github_owner    = "Shinn0x"
+github_owner_id = "REDACTED_GITHUB_OWNER_ID"
+github_repo     = "aws-terraform-ansible-deployment-automation"
+github_repo_id  = "REDACTED_GITHUB_REPO_ID"
+github_branch   = "main"
+
+state_bucket_name = "shinn-terraform-state-foundation"
