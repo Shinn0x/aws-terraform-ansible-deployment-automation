@@ -11,10 +11,22 @@ variable "github_owner" {
   default     = "Shinn0x"
 }
 
+variable "github_owner_id" {
+  description = "Immutable GitHub owner ID"
+  type        = string
+  default     = "148429347"
+}
+
 variable "github_repo" {
   description = "GitHub repository name"
   type        = string
   default     = "aws-terraform-ansible-deployment-automation"
+}
+
+variable "github_repo_id" {
+  description = "Immutable GitHub repository ID"
+  type        = string
+  default     = "1471521259"
 }
 
 variable "github_branch" {
