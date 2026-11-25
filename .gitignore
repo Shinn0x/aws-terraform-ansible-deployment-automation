@@ -49,3 +49,6 @@ secrets/
 .DS_Store
 Thumbs.db
 
+
+# Output files
+bootstrap/02-github-oidc/outputs.txt
