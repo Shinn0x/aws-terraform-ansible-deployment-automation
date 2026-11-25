@@ -13,3 +13,8 @@ output "github_actions_role_arn" {
   description = "IAM role ARN for GitHub Actions"
   value       = aws_iam_role.github_actions.arn
 }
+
+output "github_oidc_subject" {
+  description = "OIDC sub claim the role trusts. Compare it with the sub of a workflow that gets AccessDenied."
+  value       = local.github_oidc_subject
+}

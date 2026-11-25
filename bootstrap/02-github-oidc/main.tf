@@ -10,15 +10,15 @@ resource "aws_iam_openid_connect_provider" "github" {
   client_id_list = [
     "sts.amazonaws.com"
   ]
+}
 
-  tags = {
-    Project   = "aws-terraform-ansible-deployment-automation"
-    ManagedBy = "Terraform"
-  }
+# GitHub's immutable subject format (default for repos created after 2026-07-15):
+# repo:OWNER@OWNER_ID/REPO@REPO_ID:ref:refs/heads/BRANCH
+locals {
+  github_oidc_subject = "repo:${var.github_owner}@${var.github_owner_id}/${var.github_repo}@${var.github_repo_id}:ref:refs/heads/${var.github_branch}"
 }
 
 # Define which GitHub workflow identity can assume the role
-
 data "aws_iam_policy_document" "github_assume_role" {
   statement {
     effect = "Allow"
@@ -49,7 +49,7 @@ data "aws_iam_policy_document" "github_assume_role" {
       variable = "token.actions.githubusercontent.com:sub"
 
       values = [
-        "repo:${var.github_owner}@${var.github_owner_id}/${var.github_repo}@${var.github_repo_id}:ref:refs/heads/${var.github_branch}"
+        local.github_oidc_subject
       ]
     }
   }
@@ -59,11 +59,6 @@ data "aws_iam_policy_document" "github_assume_role" {
 resource "aws_iam_role" "github_actions" {
   name               = "github-actions-terraform-role"
   assume_role_policy = data.aws_iam_policy_document.github_assume_role.json
-
-  tags = {
-    Project   = "aws-terraform-ansible-deployment-automation"
-    ManagedBy = "Terraform"
-  }
 }
 
 # Create the permissions policy from the JSON file
