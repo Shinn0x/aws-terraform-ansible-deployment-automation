@@ -21,6 +21,11 @@ variable "github_owner_id" {
   description = "Immutable GitHub owner ID"
   type        = string
   default     = "REDACTED_GITHUB_OWNER_ID"
+
+  validation {
+    condition     = can(regex("^[0-9]+$", var.github_owner_id))
+    error_message = "github_owner_id must be the numeric GitHub owner ID (gh api users/OWNER --jq .id)."
+  }
 }
 
 variable "github_repo" {
@@ -33,6 +38,11 @@ variable "github_repo_id" {
   description = "Immutable GitHub repository ID"
   type        = string
   default     = "REDACTED_GITHUB_REPO_ID"
+
+  validation {
+    condition     = can(regex("^[0-9]+$", var.github_repo_id))
+    error_message = "github_repo_id must be the numeric GitHub repository ID (gh api repos/OWNER/REPO --jq .id)."
+  }
 }
 
 variable "github_branch" {
