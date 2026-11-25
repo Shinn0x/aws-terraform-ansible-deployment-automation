@@ -5,6 +5,12 @@ variable "aws_region" {
   default     = "ap-southeast-1"
 }
 
+variable "environment" {
+  description = "Deployment environment"
+  type        = string
+  default     = "dev"
+}
+
 variable "github_owner" {
   description = "GitHub repository owner"
   type        = string

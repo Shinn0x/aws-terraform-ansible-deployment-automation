@@ -9,6 +9,21 @@ terraform {
   }
 }
 
+locals {
+  project_name = "aws-terraform-ansible-deployment-automation"
+  environment  = var.environment
+
+  common_tags = {
+    Project     = local.project_name
+    Environment = local.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
 provider "aws" {
   region = var.aws_region
+
+  default_tags {
+    tags = local.common_tags
+  }
 }
