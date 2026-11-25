@@ -1,282 +1,173 @@
 # AWS Terraform Ansible Deployment Automation
 
-A reusable AWS infrastructure provisioning and application deployment project using Terraform, Ansible, GitHub Actions, and OpenID Connect (OIDC).
+A reusable AWS infrastructure provisioning and application deployment project using Terraform, Ansible, GitHub Actions, and AWS IAM OIDC.
 
-This project demonstrates how to automate AWS infrastructure, server configuration, and static website deployment using Infrastructure as Code and CI/CD.
+## Project Overview
 
-The objective is to build a reusable deployment foundation that can be adapted for future AWS projects.
+This project demonstrates how to automate the provisioning of AWS infrastructure and deployment of a website without relying on manual AWS Console setup.
 
-## Project Objectives
+The goal is to build a repeatable workflow that can provision infrastructure, configure servers, deploy an application, and verify that the deployment is healthy.
 
-- Provision AWS infrastructure using Terraform
-- Store Terraform state remotely in Amazon S3
-- Authenticate GitHub Actions to AWS using OIDC
-- Configure EC2 instances using Ansible
-- Automate infrastructure and application deployment
-- Implement automated deployment verification
-- Build reusable Terraform modules, Ansible roles, and GitHub Actions workflows
-- Avoid manual AWS Console configuration after the initial bootstrap
+## Architecture
 
-## Architecture Overview
+The project will be developed in the following stages:
 
-The project is divided into five sections:
-
-| Section | Description |
-|---|---|
-| 01 | AWS S3 remote Terraform state bootstrap |
-| 02 | GitHub Actions OIDC authentication |
-| 03 | AWS infrastructure provisioning with Terraform |
-| 04 | EC2 configuration and website deployment with Ansible |
-| 05 | Automated deployment verification |
+1. Bootstrap an S3 bucket for Terraform remote state.
+2. Configure GitHub Actions authentication using AWS IAM OIDC.
+3. Provision AWS infrastructure using Terraform.
+4. Configure the EC2 instance and deploy a website using Ansible.
+5. Run automated health checks to verify the deployment.
 
 ## Technology Stack
 
-| Technology | Purpose |
-|---|---|
-| AWS | Cloud infrastructure |
-| Amazon S3 | Remote Terraform state |
-| AWS IAM | Identity and access management |
-| AWS STS | Temporary credentials |
-| Terraform | Infrastructure as Code |
-| Ansible | Configuration management |
-| GitHub Actions | CI/CD automation |
-| AWS CLI | Initial bootstrap and AWS operations |
-| Boto3 | Optional AWS automation |
-| Amazon VPC | Network infrastructure |
-| Amazon EC2 | Static website hosting |
-| AWS Systems Manager | Secure instance management |
+- AWS
+- Terraform
+- Ansible
+- GitHub Actions
+- AWS CLI
+- Bash
+- Git and GitHub
 
-## Repository Structure
+## Project Structure
 
 ```text
-aws-terraform-ansible-deployment-automation/
+.
 ├── bootstrap/
 │   ├── 01-state-bucket/
+│   │   └── create-state-bucket.sh
 │   └── 02-github-oidc/
 ├── infrastructure/
-│   ├── modules/
-│   └── environments/
 ├── configuration/
-│   ├── inventories/
-│   ├── playbooks/
-│   └── roles/
 ├── application/
-│   └── website/
 ├── scripts/
-│   └── create-structure.sh
+├── docs/
 ├── .github/
 │   └── workflows/
-├── docs/
 ├── .gitignore
 └── README.md
 ```
 
-# Section 01 — AWS S3 Remote State Bootstrap
+## Section 01 — Terraform State Bucket Bootstrap
 
-## Objective
+The first stage creates an S3 bucket to store Terraform state.
 
-Create an Amazon S3 bucket to store Terraform state files.
+The bucket is created using AWS CLI and configured with security and lifecycle settings.
 
-The bucket is created using AWS CLI as the initial bootstrap step.
+### Configuration
 
-## Why Remote State?
+- AWS Region: `ap-southeast-1`
+- Versioning: Enabled
+- Default encryption: SSE-S3
+- Public access: Blocked
+- Object ownership: BucketOwnerEnforced
+- Noncurrent object versions: Expire after 90 days
+- Incomplete multipart uploads: Abort after 7 days
 
-Terraform state records the infrastructure managed by Terraform.
+The lifecycle policy preserves the current Terraform state while cleaning up older versions and incomplete uploads.
 
-Remote state allows the project to:
+### Bootstrap Script
 
-- Keep state outside the source repository
-- Support Terraform execution from GitHub Actions
-- Share state between authorized deployment environments
-- Recover previous state versions through S3 versioning
+```text
+bootstrap/01-state-bucket/create-state-bucket.sh
+```
 
-## Implementation
+The script creates and configures the S3 bucket using AWS CLI.
 
-Directory:
+### Prerequisites
 
-`bootstrap/01-state-bucket/`
+- AWS CLI installed
+- AWS CLI configured with appropriate permissions
+- A globally unique S3 bucket name
 
-The bootstrap script will automate:
+### Usage
 
-- S3 bucket creation
-- Bucket versioning
-- Server-side encryption
-- Block Public Access
-- Bucket ownership controls
-- Bucket configuration validation
+Update the bucket name and region in the script:
 
-## Security
+```bash
+BUCKET_NAME="your-unique-terraform-state-bucket"
+AWS_REGION="ap-southeast-1"
+```
 
-The state bucket must remain private.
+Run the script:
 
-Terraform state may contain sensitive information, so access must be restricted using IAM permissions.
+```bash
+chmod +x bootstrap/01-state-bucket/create-state-bucket.sh
 
-S3 versioning will be enabled to support recovery from accidental state changes.
+./bootstrap/01-state-bucket/create-state-bucket.sh
+```
 
-## Completion Criteria
+Verify the bucket versioning:
 
-- S3 bucket created successfully
-- Versioning enabled
-- Encryption configured
-- Public access blocked
-- Bucket configuration validated
+```bash
+aws s3api get-bucket-versioning \
+  --bucket "$BUCKET_NAME" \
+  --region "$AWS_REGION"
+```
 
-# Section 02 — GitHub Actions OIDC Authentication
+Verify the lifecycle configuration:
 
-## Objective
+```bash
+aws s3api get-bucket-lifecycle-configuration \
+  --bucket "$BUCKET_NAME" \
+  --region "$AWS_REGION"
+```
 
-Allow GitHub Actions to authenticate to AWS without storing permanent AWS access keys in GitHub Secrets.
+## Section 02 — GitHub Actions OIDC
 
-## Authentication Flow
+This stage will configure AWS IAM OIDC authentication for GitHub Actions.
 
-1. GitHub Actions requests an OIDC token.
-2. AWS STS validates the token using the GitHub identity provider.
-3. AWS grants temporary credentials by assuming the IAM role.
-4. GitHub Actions uses the temporary credentials to access authorized AWS resources.
+Terraform will create:
 
-## Implementation
+- GitHub's OIDC identity provider in AWS IAM
+- An IAM role for GitHub Actions
+- A trust policy restricted to the project repository and branch
 
-Directory:
+GitHub Actions will use temporary credentials instead of long-lived AWS access keys.
 
-`bootstrap/02-github-oidc/`
+The initial OIDC bootstrap will use local Terraform state. The state can later be migrated to the S3 backend.
 
-Terraform will manage:
+## Section 03 — Infrastructure Provisioning
 
-- GitHub OpenID Connect provider
-- IAM role
-- IAM trust policy
-- Repository and branch restrictions
-- IAM permissions for deployment workflows
-- Terraform outputs containing the role ARN
+Terraform will provision the AWS infrastructure required for the website deployment.
 
-## Security
+Planned resources include:
 
-The IAM trust policy will restrict access to the intended GitHub repository and branch.
-
-The IAM role will follow least privilege and receive only the permissions required by deployment workflows.
-
-Permanent AWS access keys will not be stored in GitHub.
-
-## Completion Criteria
-
-- GitHub OIDC provider configured
-- IAM role created
-- Trust policy restricted to the intended repository
-- Role ARN available through Terraform output
-- GitHub Actions successfully assumes the role
-- Temporary AWS credentials verified
-
-# Section 03 — AWS Infrastructure Provisioning
-
-Status: Planned
-
-Terraform will provision the infrastructure required to host the static website.
-
-Expected resources:
-
-- VPC
-- Subnets
-- Internet Gateway
-- Route tables
-- Security groups
+- VPC and networking
 - EC2 instance
-- EC2 IAM role
-- Systems Manager access
+- IAM roles and instance permissions
+- Security groups
 
-Infrastructure will be organized into reusable Terraform modules and environment configurations.
+## Section 04 — Configuration and Deployment
 
-# Section 04 — Configuration Management and Website Deployment
+Ansible will configure the EC2 instance and deploy the website.
 
-Status: Planned
+The deployment will be automated through GitHub Actions and use AWS Systems Manager where appropriate to avoid managing SSH keys.
 
-Ansible will configure the EC2 instance and deploy the static website.
+## Section 05 — Deployment Verification
 
-Expected tasks:
+The final stage will run automated health checks to confirm that the website is reachable and responding correctly.
 
-- Install and configure a web server
-- Deploy website source files
-- Configure file permissions
-- Manage web server configuration
-- Restart services when configuration changes
-- Validate web server configuration
+## Security Considerations
 
-Ansible roles and playbooks will be designed for reuse in future projects.
+- Use IAM roles and temporary credentials where possible.
+- Restrict GitHub OIDC trust to the intended repository and branch.
+- Block public access to the Terraform state bucket.
+- Enable S3 versioning to support state recovery.
+- Do not commit AWS credentials, Terraform state files, or sensitive variables.
+- Keep the current Terraform state object protected from lifecycle expiration.
 
-# Section 05 — Automated Verification
+## Project Status
 
-Status: Planned
+- [x] Repository initialized
+- [x] S3 state bucket bootstrap script created
+- [ ] Run and verify S3 bucket bootstrap
+- [ ] Configure GitHub OIDC using Terraform
+- [ ] Configure Terraform remote state
+- [ ] Provision AWS infrastructure
+- [ ] Automate deployment with Ansible
+- [ ] Add deployment health checks
 
-The deployment pipeline will verify that the website is available after deployment.
+## Learning Objectives
 
-Expected checks:
+This project demonstrates practical experience with AWS infrastructure automation, Terraform state management, IAM OIDC authentication, CI/CD pipelines, configuration management, and automated deployment verification.
 
-- EC2 instance readiness
-- Web server service status
-- HTTP health check
-- Website response validation
-- Deployment success reporting
-
-# CI/CD Strategy
-
-GitHub Actions will orchestrate the deployment process.
-
-Planned workflows:
-
-- Terraform formatting and validation
-- Terraform plan
-- Terraform apply
-- Ansible configuration and deployment
-- Website health verification
-
-GitHub Actions will authenticate to AWS using OIDC and temporary credentials.
-
-# Reusability
-
-This repository is intended to serve as a reusable deployment foundation for future AWS projects.
-
-Reusable components will include:
-
-- Terraform infrastructure modules
-- GitHub Actions reusable workflows
-- Ansible roles
-- Bootstrap scripts
-- Deployment and validation scripts
-
-Project-specific configuration will be separated from reusable automation logic.
-
-# Security Practices
-
-- Use OIDC instead of long-lived AWS access keys
-- Apply IAM least privilege
-- Restrict GitHub OIDC trust to approved repositories and branches
-- Keep Terraform state private
-- Enable S3 state versioning
-- Avoid committing credentials and sensitive state files
-- Use secure network access for EC2 administration
-
-# Project Status
-
-| Section | Status |
-|---|---|
-| 01 — S3 State Bootstrap | In progress |
-| 02 — GitHub OIDC | Planned |
-| 03 — Terraform Infrastructure | Planned |
-| 04 — Ansible Deployment | Planned |
-| 05 — Automated Verification | Planned |
-
-# Learning Outcomes
-
-This project demonstrates practical experience with:
-
-- AWS infrastructure design
-- Infrastructure as Code
-- Terraform state management
-- IAM and OIDC authentication
-- CI/CD automation
-- Linux configuration management
-- AWS networking
-- Secure cloud deployment practices
-
-# License
-
-This project is licensed under the MIT License.
