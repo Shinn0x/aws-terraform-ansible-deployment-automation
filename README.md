@@ -47,7 +47,8 @@ See [Architecture](docs/architecture.md) for how the components fit together.
 │       ├── main.tf
 │       ├── outputs.tf
 │       ├── github-actions-policy.json
-│       └── check-github-oidc.sh
+│       ├── check-github-oidc.sh
+│       └── terraform.tfvars.example
 ├── infrastructure/
 ├── configuration/
 ├── application/
@@ -58,6 +59,7 @@ See [Architecture](docs/architecture.md) for how the components fit together.
 │   └── 02-github-actions-oidc.md
 ├── .github/
 │   └── workflows/
+│       └── terraform.yaml
 ├── .gitignore
 └── README.md
 ```
@@ -151,7 +153,7 @@ Terraform manages:
 
 - GitHub's OIDC identity provider in AWS IAM
 - An IAM role for GitHub Actions
-- A trust policy restricted to the project repository and branch
+- A trust policy restricted to this repository's `main` branch, matched by name and immutable GitHub ID
 - An IAM permissions policy for Terraform state access
 
 GitHub Actions will use temporary AWS credentials through OIDC instead of long-lived AWS access keys.
@@ -180,7 +182,50 @@ If the provider already exists but is not in Terraform state, import it before a
 
 The permissions policy (`github-actions-policy.json`) is a template. Terraform fills in the state bucket name from the `state_bucket_name` variable.
 
-The trust policy only allows workflows running on the `main` branch.
+All resources get `Project`, `Environment` and `ManagedBy` tags from the provider's `default_tags`.
+
+`terraform.tfvars.example` lists every variable with its default value.
+
+### Trust Policy Subject
+
+The trust policy uses GitHub's immutable subject format, which includes the owner and repository IDs:
+
+```text
+repo:OWNER@OWNER_ID/REPO@REPO_ID:ref:refs/heads/main
+```
+
+The IDs stay the same if the owner or repository is renamed, so a different repository that reuses the name cannot assume the role. GitHub uses this format by default for repositories created after July 15, 2026.
+
+Print the exact subject the role trusts:
+
+```bash
+terraform output github_oidc_subject
+```
+
+Only workflows running on `main` match this subject.
+
+### GitHub Actions Workflow
+
+`.github/workflows/terraform.yaml` runs when files under `infrastructure/`, `bootstrap/02-github-oidc/` or `.github/workflows/` change.
+
+| Event | Terraform checks | OIDC role test |
+|---|---|---|
+| Pull request to `main` | Run | Skipped |
+| Push to `main`, including a merged PR | Run | Run |
+| Manual run on `main` | Run | Run |
+| Manual run on another branch | Run | Skipped |
+
+- **Terraform checks:** `terraform fmt -check` across the repository, plus `init` and `validate` for `bootstrap/02-github-oidc` and `infrastructure/environments/dev`.
+- **OIDC role test:** assumes the IAM role through OIDC, checks that the identity is `github-actions-terraform-role`, and checks that the role can list the state bucket.
+
+The OIDC steps are skipped on pull requests because a PR run sends a `pull_request` subject, which the trust policy does not allow.
+
+The workflow reads the role ARN from the `AWS_ROLE_ARN` repository variable. Set it from the Terraform output:
+
+```bash
+cd bootstrap/02-github-oidc
+gh variable set AWS_ROLE_ARN --body "$(terraform output -raw github_actions_role_arn)"
+```
 
 Detailed documentation:
 
@@ -210,7 +255,8 @@ The final stage will run automated health checks to confirm that the website is 
 ## Security Considerations
 
 - Use IAM roles and temporary credentials where possible.
-- Restrict GitHub OIDC trust to the intended repository and branch.
+- Restrict GitHub OIDC trust to the intended repository and branch, using immutable owner and repository IDs.
+- Only assume the AWS role from `main` in CI. Pull request runs check and validate Terraform without AWS access.
 - Block public access to the Terraform state bucket.
 - Enable S3 versioning to support state recovery.
 - Do not commit AWS credentials, Terraform state files, or sensitive variables.
@@ -225,7 +271,10 @@ The final stage will run automated health checks to confirm that the website is 
 - [x] GitHub OIDC Terraform configuration created
 - [x] GitHub OIDC provider managed in Terraform state
 - [x] GitHub Actions IAM role and state access policy created and verified
-- [ ] Add a GitHub Actions workflow that assumes the IAM role
+- [x] Trust policy bound to immutable GitHub owner and repository IDs
+- [x] OIDC role tested from a GitHub Actions workflow (temporary test branch)
+- [x] Terraform CI workflow added (fmt, validate, OIDC role test on `main`)
+- [ ] Terraform CI workflow verified on `main`
 - [ ] Configure Terraform remote state
 - [ ] Provision AWS infrastructure
 - [ ] Automate deployment with Ansible
