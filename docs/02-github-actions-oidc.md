@@ -12,7 +12,7 @@ The authentication flow:
 2. GitHub Actions presents the token to AWS STS.
 3. AWS validates the token against the GitHub OIDC identity provider.
 4. AWS checks the IAM role's trust policy.
-5. If the token matches the trusted repository and branch, AWS returns temporary credentials.
+5. If the token matches the trust policy, AWS returns temporary credentials.
 6. Terraform uses those credentials to access AWS resources.
 
 ## 2. Prerequisites
@@ -22,6 +22,7 @@ The authentication flow:
 - Access to the target AWS account
 - GitHub repository created
 - Permission to manage IAM OIDC providers, roles, and policies
+- GitHub CLI (`gh`), optional, to look up the owner and repository IDs
 
 Repository:
 
@@ -45,7 +46,8 @@ bootstrap/
     ├── main.tf
     ├── outputs.tf
     ├── github-actions-policy.json
-    └── check-github-oidc.sh
+    ├── check-github-oidc.sh
+    └── terraform.tfvars.example
 ```
 
 ## 4. Check Whether the OIDC Provider Exists
@@ -56,7 +58,7 @@ GitHub's OIDC provider URL is:
 https://token.actions.githubusercontent.com
 ```
 
-An AWS account can have this provider already registered. Before creating it, check whether it exists.
+An AWS account may already have this provider registered. Check before creating it.
 
 Get the AWS account ID:
 
@@ -156,10 +158,27 @@ terraform {
   }
 }
 
+locals {
+  project_name = "aws-terraform-ansible-deployment-automation"
+  environment  = var.environment
+
+  common_tags = {
+    Project     = local.project_name
+    Environment = local.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
 provider "aws" {
   region = var.aws_region
+
+  default_tags {
+    tags = local.common_tags
+  }
 }
 ```
+
+`default_tags` adds `common_tags` to every resource this provider creates, so the resources in `main.tf` do not need their own `tags` blocks.
 
 ## 7. Terraform Variables
 
@@ -172,16 +191,44 @@ variable "aws_region" {
   default     = "ap-southeast-1"
 }
 
+variable "environment" {
+  description = "Deployment environment"
+  type        = string
+  default     = "dev"
+}
+
 variable "github_owner" {
   description = "GitHub repository owner"
   type        = string
   default     = "Shinn0x"
 }
 
+variable "github_owner_id" {
+  description = "Immutable GitHub owner ID"
+  type        = string
+  default     = "148429347"
+
+  validation {
+    condition     = can(regex("^[0-9]+$", var.github_owner_id))
+    error_message = "github_owner_id must be the numeric GitHub owner ID (gh api users/OWNER --jq .id)."
+  }
+}
+
 variable "github_repo" {
   description = "GitHub repository name"
   type        = string
   default     = "aws-terraform-ansible-deployment-automation"
+}
+
+variable "github_repo_id" {
+  description = "Immutable GitHub repository ID"
+  type        = string
+  default     = "1471521259"
+
+  validation {
+    condition     = can(regex("^[0-9]+$", var.github_repo_id))
+    error_message = "github_repo_id must be the numeric GitHub repository ID (gh api repos/OWNER/REPO --jq .id)."
+  }
 }
 
 variable "github_branch" {
@@ -197,6 +244,16 @@ variable "state_bucket_name" {
 }
 ```
 
+The owner and repository IDs are numeric and are stored as strings. Look them up with:
+
+```bash
+gh api repos/OWNER/REPO --jq '{repo_id: .id, owner_id: .owner.id}'
+```
+
+The `validation` blocks stop `terraform plan` early if a name is put in an ID field by mistake. A wrong ID would otherwise only show up as `AccessDenied` in the workflow.
+
+`terraform.tfvars.example` lists every variable with its default value.
+
 ## 8. Create the OIDC Provider and IAM Role
 
 `main.tf`
@@ -210,11 +267,12 @@ resource "aws_iam_openid_connect_provider" "github" {
   client_id_list = [
     "sts.amazonaws.com"
   ]
+}
 
-  tags = {
-    Project   = "aws-terraform-ansible-deployment-automation"
-    ManagedBy = "Terraform"
-  }
+# GitHub's immutable subject format (default for repos created after 2026-07-15):
+# repo:OWNER@OWNER_ID/REPO@REPO_ID:ref:refs/heads/BRANCH
+locals {
+  github_oidc_subject = "repo:${var.github_owner}@${var.github_owner_id}/${var.github_repo}@${var.github_repo_id}:ref:refs/heads/${var.github_branch}"
 }
 
 data "aws_iam_policy_document" "github_assume_role" {
@@ -233,7 +291,10 @@ data "aws_iam_policy_document" "github_assume_role" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:aud"
-      values   = ["sts.amazonaws.com"]
+
+      values = [
+        "sts.amazonaws.com"
+      ]
     }
 
     condition {
@@ -241,7 +302,7 @@ data "aws_iam_policy_document" "github_assume_role" {
       variable = "token.actions.githubusercontent.com:sub"
 
       values = [
-        "repo:${var.github_owner}/${var.github_repo}:ref:refs/heads/${var.github_branch}"
+        local.github_oidc_subject
       ]
     }
   }
@@ -250,21 +311,52 @@ data "aws_iam_policy_document" "github_assume_role" {
 resource "aws_iam_role" "github_actions" {
   name               = "github-actions-terraform-role"
   assume_role_policy = data.aws_iam_policy_document.github_assume_role.json
-
-  tags = {
-    Project   = "aws-terraform-ansible-deployment-automation"
-    ManagedBy = "Terraform"
-  }
 }
 ```
 
-The trust policy restricts role assumption to the specified GitHub repository and branch.
+Tags come from the provider's `default_tags`, so no resource sets `tags` itself.
 
-## 9. IAM Permissions Policy
+## 9. Understanding the Subject (`sub`) Claim
 
-The trust policy controls **who can assume the role**.
+The `sub` claim identifies the source of the GitHub Actions OIDC token.
 
-The permissions policy controls **what the role can do after it is assumed**.
+The subject format used in this project is:
+
+```text
+repo:OWNER@OWNER_ID/REPOSITORY@REPOSITORY_ID:ref:refs/heads/BRANCH
+```
+
+For example, the format contains:
+
+```text
+repo:Shinn0x@OWNER_ID/aws-terraform-ansible-deployment-automation@REPOSITORY_ID:ref:refs/heads/main
+```
+
+The actual owner and repository IDs must be used in the Terraform variables.
+
+To print the exact subject this configuration trusts:
+
+```bash
+terraform output github_oidc_subject
+```
+
+### Why include the IDs?
+
+Previously, the default subject format used repository and owner names only.
+
+GitHub's immutable subject claim format includes the owner ID and repository ID. These IDs remain stable when the owner or repository is renamed, helping prevent a different repository from matching a reused name.
+
+The trust policy in this project matches both the names and IDs, as well as the branch. A rename will require updating the name in Terraform even though the numeric ID remains unchanged.
+
+GitHub uses this format by default for repositories created after July 15, 2026, and for repositories renamed or transferred after that date. This repository was created after that date. Older repositories keep the name-only format (`repo:OWNER/REPO:ref:refs/heads/BRANCH`) unless they opt in. If you reuse this project with an older repository, check which format its tokens use, otherwise the trust policy will not match.
+
+GitHub's immutable subject claim format is documented in the [GitHub OIDC reference](https://docs.github.com/en/actions/reference/security/oidc).
+
+## 10. IAM Permissions Policy
+
+The trust policy controls who can assume the role.
+
+The permissions policy controls what the role can do after it is assumed.
 
 For the initial setup, the GitHub Actions role is granted access to the Terraform state bucket.
 
@@ -329,7 +421,7 @@ resource "aws_iam_role_policy_attachment" "github_actions" {
 
 This policy currently grants state bucket access only. Additional permissions for provisioning AWS infrastructure will be added in a later stage.
 
-## 10. Terraform Outputs
+## 11. Terraform Outputs
 
 `outputs.tf`
 
@@ -348,9 +440,14 @@ output "github_actions_role_arn" {
   description = "IAM role ARN for GitHub Actions"
   value       = aws_iam_role.github_actions.arn
 }
+
+output "github_oidc_subject" {
+  description = "OIDC sub claim the role trusts. Compare it with the sub of a workflow that gets AccessDenied."
+  value       = local.github_oidc_subject
+}
 ```
 
-## 11. Initialize and Apply
+## 12. Initialize and Apply
 
 From the OIDC bootstrap directory:
 
@@ -374,11 +471,11 @@ Retrieve the role ARN:
 terraform output github_actions_role_arn
 ```
 
-The role ARN will be used by the GitHub Actions workflow in a later stage.
+The role ARN is used by the GitHub Actions workflow.
 
-## 12. Verify the IAM Role
+## 13. Verify the IAM Role
 
-List the role:
+Check the role:
 
 ```bash
 aws iam get-role \
@@ -392,28 +489,45 @@ aws iam list-attached-role-policies \
   --role-name github-actions-terraform-role
 ```
 
-## 13. Security Notes
+## 14. GitHub Actions OIDC Test
+
+The IAM role was tested from a GitHub Actions workflow on a temporary test branch, `test-oidc-allowed`.
+
+For the test, the trust policy temporarily allowed that branch in addition to `main`.
+
+The workflow successfully assumed the AWS IAM role using OIDC and obtained temporary AWS credentials.
+
+After successful verification, the test branch was removed from the trust policy and the branch was deleted.
+
+The role's trust policy now allows only the `main` branch of this repository.
+
+## 15. Security Notes
 
 - Do not store long-lived AWS access keys in GitHub Secrets.
 - Restrict the OIDC trust policy to the intended repository and branch.
+- Include GitHub owner and repository IDs in the subject condition.
 - Do not use a wildcard subject unless there is a specific security reason.
 - Grant only the permissions required by Terraform.
 - Keep Terraform state private and protected.
 - Review Terraform plans before applying changes to IAM resources.
-- The trust policy only matches workflows running on the `main` branch (`repo:Shinn0x/aws-terraform-ansible-deployment-automation:ref:refs/heads/main`). Jobs that use a GitHub `environment:`, or that are triggered by `pull_request`, send a different `sub` claim and will be denied. Add those subjects to the trust policy if a workflow needs them.
+- The trust policy only matches workflows running on `main`. Jobs that use a GitHub `environment:`, or that are triggered by `pull_request`, send a different `sub` claim and will be denied. Add those subjects to the trust policy if a workflow needs them.
 - This bootstrap uses local Terraform state (`terraform.tfstate`), which is git-ignored. Back it up. If it is lost, the resources must be imported again.
 
 ## Completion Checklist
 
 - [x] Existing GitHub OIDC provider checked
-- [x] OIDC provider managed in Terraform state
-- [x] Terraform plan reviewed
-- [x] GitHub Actions IAM role created
-- [x] Trust policy restricted to the repository and branch
-- [x] State access policy attached to the real state bucket
-- [ ] Role ARN retrieved and added to the GitHub Actions workflow
-- [x] IAM role and policy verified
+- [x] Existing provider imported if necessary
+- [x] GitHub Actions IAM role configured
+- [x] Trust policy restricted to repository, IDs, and branch
+- [x] State access policy attached
+- [x] IAM role verified
+- [x] GitHub Actions OIDC role tested successfully
+- [x] Temporary test branch deleted
+- [ ] Configure Terraform remote state
+- [ ] Add infrastructure provisioning permissions
 
 ## Next Stage
 
-Configure the GitHub Actions workflow to request an OIDC token and assume the IAM role. Then use the role to run Terraform from GitHub Actions.
+Configure Terraform remote state using the S3 bucket created in Section 01.
+
+After the backend is configured, migrate the OIDC bootstrap state from local storage to S3 and continue with infrastructure provisioning.
