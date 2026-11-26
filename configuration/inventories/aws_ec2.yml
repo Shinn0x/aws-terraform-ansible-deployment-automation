@@ -1,0 +1,21 @@
+---
+plugin: amazon.aws.aws_ec2
+
+regions:
+  - ap-southeast-1
+
+filters:
+  tag:Project: aws-terraform-ansible-deployment-automation
+  instance-state-name: running
+
+hostnames:
+  - tag:Name
+
+compose:
+  ansible_host: instance_id
+
+keyed_groups:
+  - key: ec2_tags.Environment
+    prefix: env
+
+use_deprecated_tags: false

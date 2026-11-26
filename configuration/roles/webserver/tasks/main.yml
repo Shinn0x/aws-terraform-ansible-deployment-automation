@@ -1,0 +1,37 @@
+---
+- name: Install nginx
+  ansible.builtin.dnf:
+    name: nginx
+    state: present
+
+- name: Create the website folder
+  ansible.builtin.file:
+    path: "{{ webserver_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copy the website
+  ansible.builtin.copy:
+    src: "{{ webserver_src }}"
+    dest: "{{ webserver_root }}/"
+    owner: root
+    group: root
+    mode: "0644"
+    directory_mode: "0755"
+
+- name: Add the nginx site config
+  ansible.builtin.template:
+    src: agex.conf.j2
+    dest: /etc/nginx/conf.d/agex.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload nginx
+
+- name: Start nginx and enable it at boot
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: started
+    enabled: true

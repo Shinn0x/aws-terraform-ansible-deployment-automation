@@ -1,0 +1,9 @@
+---
+# Where the website files will be copied to. This folder will be created if it doesn't exist.
+webserver_root: /var/www/agex
+
+# Website files in this repo. The trailing / copies the folder's contents, not the folder.
+webserver_src: "{{ playbook_dir }}/../../application/website/"
+
+# Domain nginx answers for. Set per environment in group_vars.
+webserver_server_name: localhost

@@ -1,0 +1,8 @@
+---
+- name: Deploy the Agex website
+  hosts: "env_{{ target_env }}"
+  become: true
+  gather_facts: false
+
+  roles:
+    - webserver
