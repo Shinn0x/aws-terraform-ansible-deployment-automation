@@ -410,6 +410,24 @@ The action names and resource types were checked against the AWS Service Authori
 
 If you rename the website records in `infrastructure/environments/*/variables.tf`, update the names in `Route53RecordManage` too.
 
+### Ansible Policy
+
+`github-actions-ansible-policy.json` is a second policy on the same role, because the first one is close to the 6,144-character IAM limit. It uses the `${aws_region}` and `${account_id}` placeholders.
+
+| Statement | Actions | Resource |
+|---|---|---|
+| `AnsibleBucketManage` | Create, read, configure and delete the Ansible bucket | Buckets named `aws-terraform-ansible-deployment-automation-*-ansible-ssm` |
+| `AnsibleBucketObjects` | Upload, download and delete files | Objects in those buckets |
+| `SsmSessionProjectInstances` | `ssm:StartSession` | Instances tagged `Project = aws-terraform-ansible-deployment-automation` |
+| `SsmSessionDocument` | `ssm:StartSession` | The default `SSM-SessionManagerRunShell` session document |
+| `SsmOwnSessions` | `ssm:TerminateSession`, `ssm:ResumeSession` | Only sessions the role started itself (`aws:ssmmessages:session-id` tag equals `${aws:userid}`) |
+
+The instance needs no S3 permissions. Ansible creates presigned URLs, and the instance downloads with `curl`.
+
+In the JSON file, `${aws:userid}` is written as `$${aws:userid}`, so `templatefile` leaves it for IAM instead of treating it as a placeholder.
+
+This policy also passes IAM Access Analyzer `ValidatePolicy` with no findings.
+
 `AllowIdentityCheck` lets a workflow run `aws sts get-caller-identity` to confirm which role it is using.
 
 Attach the policy in `main.tf`:

@@ -27,3 +27,8 @@ output "website_url" {
   description = "URL of the website"
   value       = "http://${aws_route53_record.agex.fqdn}"
 }
+
+output "ansible_bucket_name" {
+  description = "S3 bucket for Ansible file transfers over SSM"
+  value       = module.ansible_bucket.bucket_name
+}

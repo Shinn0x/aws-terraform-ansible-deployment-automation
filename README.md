@@ -47,13 +47,15 @@ See [Architecture](docs/architecture.md) for how the components fit together.
 │       ├── main.tf
 │       ├── outputs.tf
 │       ├── github-actions-policy.json
+│       ├── github-actions-ansible-policy.json
 │       └── check-github-oidc.sh
 ├── infrastructure/
 │   ├── modules/                  # reusable modules, no provider or backend
 │   │   ├── vpc/
 │   │   ├── security-group/
 │   │   ├── iam/
-│   │   └── ec2/
+│   │   ├── ec2/
+│   │   └── s3/
 │   └── environments/             # Terraform runs here only
 │       ├── dev/
 │       │   ├── backend.tf        # terraform block and S3 backend
@@ -315,8 +317,9 @@ The code is split in two:
 | `security-group` | Web server security group: HTTP and HTTPS in, HTTP and HTTPS out | [README](infrastructure/modules/security-group/README.md) |
 | `iam` | EC2 role with `AmazonSSMManagedInstanceCore`, and its instance profile | [README](infrastructure/modules/iam/README.md) |
 | `ec2` | Amazon Linux 2023 web server with an Elastic IP: IMDSv2, encrypted disk, no SSH key | [README](infrastructure/modules/ec2/README.md) |
+| `s3` | Private bucket Ansible uses to copy files to the instance over SSM | [README](infrastructure/modules/s3/README.md) |
 
-Each environment calls all four modules. The settings that differ:
+Each environment calls all five modules. The settings that differ:
 
 | Setting | dev | prod |
 |---|---|---|
@@ -340,7 +343,7 @@ terraform plan
 terraform apply
 ```
 
-Outputs: `vpc_id`, `public_subnet_id`, `security_group_id`, `instance_id`, `public_ip` and `website_url`.
+Outputs: `vpc_id`, `public_subnet_id`, `security_group_id`, `instance_id`, `public_ip`, `website_url` and `ansible_bucket_name`.
 
 ### Destroy an Environment
 
@@ -369,14 +372,18 @@ gh workflow enable terraform.yaml
 
 ### CI Permissions
 
-`github-actions-policy.json` lets the GitHub Actions role manage everything the environments create: the VPC, the security group, the web server role and instance profile, the instance and its Elastic IP, and the website A records in Route 53. It can also read the AMI parameter from SSM. Each statement is limited to this account, region or project names. The statements are listed in [GitHub Actions OIDC Setup](docs/02-github-actions-oidc.md).
+`github-actions-policy.json` lets the GitHub Actions role manage everything the environments create: the VPC, the security group, the web server role and instance profile, the instance and its Elastic IP, and the website A records in Route 53. It can also read the AMI parameter from SSM.
 
-The policy is applied from your machine, not by CI:
+`github-actions-ansible-policy.json` is a second policy, because the first one is close to the IAM size limit. It lets the role manage the Ansible S3 bucket, copy files through it, and start Session Manager sessions on this project's instances.
+
+Each statement is limited to this account, region or project names. The statements are listed in [GitHub Actions OIDC Setup](docs/02-github-actions-oidc.md).
+
+The policies are applied from your machine, not by CI:
 
 ```bash
 set -a && source .env && set +a
 cd bootstrap/02-github-oidc
-terraform plan    # only aws_iam_policy.github_actions changes, in place
+terraform plan    # only IAM policies and attachments change
 terraform apply
 ```
 
@@ -423,7 +430,8 @@ The final stage will run automated health checks to confirm that the website is 
 - [x] Security group, IAM and EC2 modules created
 - [x] Modules split from environments: `infrastructure/environments/dev` and `prod` call all four modules
 - [x] CI role permissions for security groups, IAM, EC2, Elastic IP and Route 53 written
-- [ ] dev environment applied and verified
+- [x] dev environment applied by CI and verified (17 resources, SSM online, DNS resolves)
+- [x] S3 bucket and CI permissions for Ansible over SSM written
 - [ ] Automate deployment with Ansible
 - [ ] Add deployment health checks
 

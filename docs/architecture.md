@@ -83,6 +83,7 @@ flowchart LR
     env --> sg[modules/security-group]
     env --> iam[modules/iam]
     env --> ec2[modules/ec2]
+    env --> s3[modules/s3]
     vpc -->|vpc_id| sg
     vpc -->|public_subnet_id| ec2
     sg -->|security_group_id| ec2
@@ -95,8 +96,9 @@ flowchart LR
 - `security-group`: the web server security group (HTTP and HTTPS in, HTTP and HTTPS out)
 - `iam`: the EC2 role with `AmazonSSMManagedInstanceCore`, and its instance profile
 - `ec2`: the Amazon Linux 2023 web server with an Elastic IP (IMDSv2, encrypted disk, no SSH key)
+- `s3`: the private bucket Ansible uses to copy files to the instance over SSM
 
-`infrastructure/environments/dev/` and `prod/` are the only places Terraform runs. Each one holds the `terraform` block with the S3 backend, the AWS provider with `default_tags`, and the locals, and calls all four modules. dev uses `10.20.0.0/16`, prod uses `10.30.0.0/16`. GitHub Actions applies dev on every push to `main`, and prod only on a manual run.
+`infrastructure/environments/dev/` and `prod/` are the only places Terraform runs. Each one holds the `terraform` block with the S3 backend, the AWS provider with `default_tags`, and the locals, and calls all five modules. dev uses `10.20.0.0/16`, prod uses `10.30.0.0/16`. GitHub Actions applies dev on every push to `main`, and prod only on a manual run.
 
 ## Configuration and Deployment (Planned)
 

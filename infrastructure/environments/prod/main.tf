@@ -33,6 +33,13 @@ module "web_server" {
   instance_profile_name = module.web_iam.instance_profile_name
 }
 
+# Create the bucket Ansible uses to copy files over SSM
+module "ansible_bucket" {
+  source = "../../modules/s3"
+
+  name = "${local.name_prefix}-ansible-ssm"
+}
+
 # Find the public hosted zone
 data "aws_route53_zone" "main" {
   name         = var.domain_name

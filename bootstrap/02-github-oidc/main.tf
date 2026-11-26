@@ -80,3 +80,19 @@ resource "aws_iam_role_policy_attachment" "github_actions" {
   role       = aws_iam_role.github_actions.name
   policy_arn = aws_iam_policy.github_actions.arn
 }
+
+# Second policy for the Ansible bucket and SSM sessions, because the first one is almost full
+resource "aws_iam_policy" "github_actions_ansible" {
+  name        = "github-actions-ansible-policy"
+  description = "Permissions for GitHub Actions to run Ansible over SSM"
+
+  policy = templatefile("${path.module}/github-actions-ansible-policy.json", {
+    aws_region = var.aws_region
+    account_id = var.aws_account_id
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "github_actions_ansible" {
+  role       = aws_iam_role.github_actions.name
+  policy_arn = aws_iam_policy.github_actions_ansible.arn
+}
