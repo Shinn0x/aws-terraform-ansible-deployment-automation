@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Agex Nimbus doodle: a cloud cube with the Agex logo, syncing with a cloud. -->
+  <defs>
+    <filter id="rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="11" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rough-soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="20" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
+      <path d="M0 0V7" stroke="#1a1a1a" stroke-width="1.3" opacity=".5"/>
+    </pattern>
+  </defs>
+  <g filter="url(#rough)"><path d="M92 240Q205 246 318 238" stroke="#1a1a1a" stroke-width="3"/><path d="M142 252H195M219 251H245" stroke="#1a1a1a" stroke-width="2.5"/></g>
+  <g filter="url(#rough)"><path d="M130 132H246V231.8H130Z" fill="#ffb08a" transform="translate(-7 7)"/><path d="M130 132L173.5 100.1H289.5L246 132Z" fill="#fff"/><path d="M246 132L289.5 100.1V199.9L246 231.8Z" fill="#f2efec"/><path d="M246 132L289.5 100.1V199.9L246 231.8Z" fill="url(#hatch)"/><path d="M130 132H246V231.8H130Z" fill="#fff"/><path d="M130 132L173.5 100.1H289.5L246 132ZM246 132L289.5 100.1V199.9L246 231.8ZM130 132H246V231.8H130Z" stroke="#1a1a1a" stroke-width="3"/><g transform="translate(169 172.9) scale(1.188)"><rect width="32" height="32" rx="8" fill="#1a1a1a"/><path d="M10 23 16 9l6 14" stroke="#fff" stroke-width="3"/><path d="M12.4 18h7.2" stroke="#ff5f1f" stroke-width="3"/></g><path d="M153.2 218.8H222.8" stroke="#ff5f1f" stroke-width="4"/></g>
+  <g filter="url(#rough)"><path d="M195 92V76M211 92V76" stroke="#1a1a1a" stroke-width="2.5" stroke-dasharray="1 7"/><path d="M189 83l6-7 6 7M205 85l6 7 6-7" stroke="#1a1a1a" stroke-width="2.5"/></g>
+  <g filter="url(#rough)"><path d="M-52 22C-70 22-74-2-56-8C-58-32-26-40-14-24C-6-46 30-46 36-18C58-22 68 2 52 22Z" fill="#ffb08a" transform="translate(197 52) scale(0.72)"/><path d="M-52 22C-70 22-74-2-56-8C-58-32-26-40-14-24C-6-46 30-46 36-18C58-22 68 2 52 22Z" fill="#fff" stroke="#1a1a1a" stroke-width="4.2" transform="translate(203 46) scale(0.72)"/></g>
+  <g filter="url(#rough)"><path d="M326 93V107M319 100H333M323.1 97.1L328.9 102.9M328.9 97.1L323.1 102.9" stroke="#ff5f1f" stroke-width="2.5"/></g>
+</svg>

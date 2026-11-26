@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 300" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Agex launch doodle: a rocket with the Agex logo in its window, taking off. -->
+  <defs>
+    <filter id="rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="71" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rough-soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="80" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
+      <path d="M0 0V7" stroke="#1a1a1a" stroke-width="1.3" opacity=".5"/>
+    </pattern>
+  </defs>
+  <g transform="rotate(10 260 136)"><g filter="url(#rough)"><path d="M238 196Q260 260 282 196Z" fill="#ff5f1f" stroke="#1a1a1a" stroke-width="3"/><path d="M218 144L188 202H226ZM302 144L332 202H294Z" fill="#ff5f1f" stroke="#1a1a1a" stroke-width="3"/><path d="M260 28C308 64 310 146 294 196H226C210 146 212 64 260 28Z" fill="#ffb08a" transform="translate(-7 7)"/><path d="M260 28C308 64 310 146 294 196H226C210 146 212 64 260 28Z" fill="#fff" stroke="#1a1a1a" stroke-width="3"/><circle cx="260" cy="102" r="27" fill="#fff1e9" stroke="#1a1a1a" stroke-width="3"/><g transform="translate(244 86) scale(1.000)"><rect width="32" height="32" rx="8" fill="#1a1a1a"/><path d="M10 23 16 9l6 14" stroke="#fff" stroke-width="3"/><path d="M12.4 18h7.2" stroke="#ff5f1f" stroke-width="3"/></g></g></g>
+  <g filter="url(#rough)"><circle cx="196" cy="262" r="16" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="224" cy="270" r="21" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="262" cy="266" r="24" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="300" cy="272" r="19" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="330" cy="262" r="14" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/></g>
+  <g filter="url(#rough)"><path d="M178 92q-12 10-10 26M352 64q12 10 10 26" stroke="#1a1a1a" stroke-width="2.5"/></g>
+  <g filter="url(#rough)"><path d="M118 52V68M110 60H126M114.6 56.6L121.4 63.4M121.4 56.6L114.6 63.4" stroke="#ff5f1f" stroke-width="2.5"/><path d="M420 113V127M413 120H427M417.1 117.1L422.9 122.9M422.9 117.1L417.1 122.9" stroke="#1a1a1a" stroke-width="2.5"/><path d="M400 35V45M395 40H405M397.9 37.9L402.1 42.1M402.1 37.9L397.9 42.1" stroke="#ff5f1f" stroke-width="2.5"/></g>
+</svg>

@@ -4,246 +4,336 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<meta name="description" content="A static site served by nginx on Amazon EC2.">
-<title>Cloud Static</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%232f7cf6' d='M7 19a5 5 0 0 1-.6-10A6.5 6.5 0 0 1 19 9.5 4.8 4.8 0 0 1 18.5 19z'/%3E%3C/svg%3E">
+<!-- PLACEHOLDER: Agex and its products are imaginary. Replace all copy, prices and numbers with real content. -->
+<meta name="description" content="Agex invents cloud, hardware and IT products you won't find anywhere else, tested to be reliable and backed by our own team.">
+<title>Agex | Tech the world hasn't seen yet</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231a1a1a'/%3E%3Cpath d='M10 23 16 9l6 14' fill='none' stroke='%23fff' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12.4 18h7.2' stroke='%23ff5f1f' stroke-width='2.8' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap">
-<!-- Styles and script are inline so this one file is the whole page. -->
-
-<style>
-:root{
-  --ink:#0b2545;--ink-soft:#3d5a80;--white:#fff;
-  --sky-1:#7fb8ff;--sky-2:#bcdcff;--sky-3:#eef6ff;
-  --serif:"Instrument Serif","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
-  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  color-scheme:light;
-}
-*,*::before,*::after{box-sizing:border-box}
-html,body{margin:0}
-body{
-  min-block-size:100vh;min-block-size:100dvh;
-  padding:clamp(.5rem,1.6vw,1.25rem);
-  background:#e9f2fc;color:var(--ink);font:1rem/1.5 var(--sans);
-  -webkit-font-smoothing:antialiased;
-  display:grid;
-}
-/* The framed panel, like a window onto the sky. */
-.frame{
-  position:relative;overflow:hidden;isolation:isolate;
-  border-radius:clamp(14px,2vw,28px);
-  background:linear-gradient(180deg,var(--sky-1) 0%,var(--sky-2) 48%,var(--sky-3) 100%);
-  box-shadow:0 30px 80px -40px #0b254580,inset 0 0 0 1px #ffffff80;
-  display:grid;grid-template-rows:auto 1fr auto;
-  padding:clamp(1rem,3.2vw,2.75rem);gap:1rem;
-}
-/* Soft clouds drifting behind everything. */
-.cloud{
-  position:absolute;z-index:-1;border-radius:50%;
-  background:radial-gradient(closest-side,#fff,#ffffffb0 45%,transparent);
-  filter:blur(8px);opacity:.85;pointer-events:none;
-  animation:drift var(--t,70s) linear infinite alternate;
-}
-.cloud.a{inline-size:46vw;block-size:16vw;top:6%;left:-12%;--t:80s}
-.cloud.b{inline-size:38vw;block-size:13vw;top:58%;left:62%;--t:64s;animation-direction:alternate-reverse}
-.cloud.c{inline-size:60vw;block-size:20vw;bottom:-9vw;left:18%;--t:95s;opacity:1}
-@keyframes drift{to{translate:18vw 0}}
-
-/* ---- header / footer ---- */
-header,footer{display:flex;justify-content:space-between;align-items:center;gap:1rem;position:relative;z-index:2}
-.logo{display:inline-flex;align-items:center;gap:.55rem;font-weight:600;letter-spacing:-.01em;font-size:clamp(.95rem,.85rem + .4vw,1.15rem);color:var(--ink);overflow-wrap:anywhere}
-.logo svg{inline-size:1.6em;block-size:1.6em;flex:none;transition:rotate .4s}
-a.logo{text-decoration:none;border-radius:6px}
-a.logo:hover svg{rotate:-8deg}
-.logo:focus-visible,dialog a:focus-visible{outline:2px solid var(--ink);outline-offset:4px}
-dialog a{color:var(--ink);font-weight:600;text-underline-offset:3px}
-.pill{
-  display:inline-flex;align-items:center;gap:.5rem;padding:.4rem .85rem;border-radius:99px;
-  background:#ffffff8c;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  box-shadow:inset 0 0 0 1px #ffffffb3;font-size:.8125rem;font-weight:500;white-space:nowrap
-}
-.dot{inline-size:.5rem;block-size:.5rem;border-radius:50%;background:#22c55e;animation:pulse 2.4s ease-out infinite}
-@keyframes pulse{from{box-shadow:0 0 0 0 #22c55e8c}to{box-shadow:0 0 0 .55rem #22c55e00}}
-footer{display:grid;grid-template-columns:1fr auto 1fr;font-family:var(--serif);font-size:clamp(.95rem,.9rem + .3vw,1.15rem);color:var(--ink-soft)}
-footer>:last-child{text-align:end}
-
-/* ---- "About" button + dialog ---- */
-.about{
-  display:inline-flex;align-items:center;gap:.45rem;padding:.6rem 1.1rem;border:0;border-radius:99px;cursor:pointer;
-  font:500 .875rem/1 var(--sans);color:var(--ink);background:#ffffffa6;
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  box-shadow:inset 0 0 0 1px #fff,0 8px 24px -12px #0b254566;transition:translate .3s,box-shadow .3s;
-}
-.about:hover{translate:0 -2px;box-shadow:inset 0 0 0 1px #fff,0 16px 30px -12px #0b254580}
-.about:focus-visible,dialog button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
-dialog{
-  inline-size:min(92vw,30rem);border:0;border-radius:20px;padding:clamp(1.25rem,4vw,2rem);
-  color:var(--ink);background:#f7fbfff2;box-shadow:0 40px 90px -30px #0b2545b3;
-}
-dialog[open]{animation:up .45s cubic-bezier(.2,.8,.2,1)}
-@keyframes up{from{opacity:0;translate:0 14px;scale:.97}}
-dialog:modal{overscroll-behavior:contain}
-dialog::backdrop{background:#0b25454d;backdrop-filter:blur(4px);overflow:hidden;overscroll-behavior:contain}
-dialog h2{margin:0 0 .4rem;font:400 2.1rem/1.1 var(--serif)}
-dialog p{margin:0 0 1.1rem;color:var(--ink-soft)}
-dialog ul{display:grid;gap:.65rem;margin:0 0 1.4rem;padding:0;list-style:none}
-dialog li{display:grid;grid-template-columns:5.5rem 1fr;gap:.75rem;font-size:.9375rem}
-dialog li b{font-weight:600}
-dialog .close{padding:.6rem 1.2rem;border:0;border-radius:99px;background:var(--ink);color:#fff;font:500 .875rem/1 var(--sans);cursor:pointer}
-@media (max-width:34rem){
-  footer{grid-template-columns:1fr 1fr;row-gap:.6rem}
-  .about{grid-column:1/-1;justify-self:center;order:-1}
-}
-
-/* ---- stage: two words + the card cluster ---- */
-main{position:relative;display:grid;place-items:center;min-block-size:0}
-h1{
-  position:absolute;inset:0;margin:0;z-index:0;
-  display:flex;justify-content:space-between;align-items:center;
-  font:400 clamp(3.25rem,1rem + 7vw,8rem)/.9 var(--serif);letter-spacing:-.02em;
-  color:var(--ink);pointer-events:none;
-}
-.w{display:block;overflow:hidden;padding-block-end:.12em}
-.w>span{display:block;animation:rise 1.1s cubic-bezier(.2,.75,.15,1) both}
-.w+.w>span{animation-delay:.12s}
-@keyframes rise{from{translate:0 105%}}
-
-.cluster{
-  --s:min(38vw,60vh);
-  position:relative;z-index:1;inline-size:var(--s);aspect-ratio:1;
-}
-.card{
-  position:absolute;left:var(--x);top:var(--y);inline-size:var(--w);block-size:var(--h);
-  translate:calc(var(--mx,0) * var(--d) * 1px) calc(var(--my,0) * var(--d) * 1px);
-  transition:translate .8s cubic-bezier(.2,.7,.2,1),scale .5s cubic-bezier(.2,.7,.2,1);
-}
-.card:hover{scale:1.06;z-index:3}
-.card i{
-  position:absolute;inset:0;border-radius:6px;overflow:hidden;
-  box-shadow:0 18px 40px -18px #0b254599,0 2px 6px #0b25451a;
-  animation:pop 1s cubic-bezier(.2,.8,.2,1.15) calc(.25s + var(--n) * .09s) both,
-            float calc(5s + var(--n) * .8s) ease-in-out calc(1.4s + var(--n) * .3s) infinite;
-}
-.card i::after{ /* passing shine */
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(115deg,transparent 35%,#ffffff8c 50%,transparent 65%);
-  translate:-130% 0;animation:sheen 9s ease-in-out calc(2.5s + var(--n) * 1.1s) infinite;
-}
-@keyframes pop{from{opacity:0;scale:.4;rotate:var(--r,-8deg)}}
-@keyframes float{50%{transform:translateY(-9px)}}
-@keyframes sheen{0%,70%{translate:-130% 0}100%{translate:130% 0}}
-
-/* Each card is a small sky, painted with gradients (no image files). */
-.c1{--x:44%;--y:0%;--w:28%;--h:34%;--d:26;--n:0;--r:7deg}
-.c1 i{background:
-  radial-gradient(40% 18% at 30% 70%,#fff 60%,transparent 62%),
-  radial-gradient(34% 16% at 62% 64%,#fff 60%,transparent 62%),
-  radial-gradient(26% 13% at 48% 56%,#fff 60%,transparent 62%),
-  linear-gradient(180deg,#5aa3ff,#cfe6ff)}
-.c2{--x:21%;--y:20%;--w:20%;--h:21%;--d:44;--n:1}
-.c2 i{background:
-  radial-gradient(60% 40% at 20% 30%,#ffffffd9,transparent 70%),
-  linear-gradient(150deg,#1f6ff2,#62b4ff 60%,#bfe3ff)}
-.c3{--x:66%;--y:28%;--w:34%;--h:20%;--d:34;--n:2;--r:6deg}
-.c3 i{background:
-  radial-gradient(30% 50% at 25% 60%,#fff,transparent 70%),
-  radial-gradient(35% 60% at 70% 40%,#fffffff2,transparent 70%),
-  linear-gradient(180deg,#a9cdf2,#e8f2fc)}
-.c4{--x:0%;--y:38%;--w:34%;--h:22%;--d:52;--n:3}
-.c4 i{background:
-  radial-gradient(14% 22% at 50% 58%,#fff7e0,#ffd9a8 40%,transparent 75%),
-  linear-gradient(180deg,#123d7a 0%,#3d7fd8 38%,#ffd2b0 56%,#f3a88e 60%,#245a9e 61%,#0c2c5a 100%)}
-.c5{--x:55%;--y:43%;--w:18%;--h:25%;--d:22;--n:4;--r:9deg}
-.c5 i{background:
-  radial-gradient(70% 35% at 50% 80%,#fff,transparent 70%),
-  linear-gradient(180deg,#d7e3f0,#f7fbff)}
-.c6{--x:30%;--y:56%;--w:26%;--h:32%;--d:38;--n:5;--r:-6deg}
-.c6 i{background:
-  radial-gradient(circle at 68% 30%,#fff 0 7%,#fff2d6 10%,transparent 28%),
-  radial-gradient(60% 22% at 30% 82%,#ffffffe6,transparent 70%),
-  linear-gradient(180deg,#2c78ea,#7cc0ff 70%,#d6ecff)}
-
-/* Portrait screens: words above and below the cluster. */
-@media (max-aspect-ratio:1/1){
-  h1{flex-direction:column;justify-content:space-between;align-items:stretch;font-size:clamp(3rem,1.6rem + 7vw,6rem)}
-  .w:last-child{text-align:end}
-  .cluster{--s:min(80vw,40vh)}
-}
-@media (max-height:30rem){
-  h1{font-size:clamp(2.5rem,1rem + 6vw,4.5rem)}
-  .cluster{--s:min(34vw,50vh)}
-  .frame{gap:.5rem}
-}
-@media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation:none!important;transition:none!important}
-  .card{translate:none}
-}
-</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400..600&family=Plus+Jakarta+Sans:wght@600..800&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<script src="js/main.js" defer></script>
 </head>
 <body>
-<div class="frame">
-  <span class="cloud a"></span><span class="cloud b"></span><span class="cloud c"></span>
+<a class="skip-link" href="#main">Skip to content</a>
 
-  <header>
-    <a class="logo" href="https://localhostshinn.xyz" title="Shin's portfolio">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M7 19a5 5 0 0 1-.6-10A6.5 6.5 0 0 1 19 9.5 4.8 4.8 0 0 1 18.5 19z"/><path fill="none" stroke="#0b2545" stroke-width="1.4" d="M7 19a5 5 0 0 1-.6-10A6.5 6.5 0 0 1 19 9.5 4.8 4.8 0 0 1 18.5 19z"/></svg>
-      Shin
-    </a>
-    <span class="pill"><span class="dot" aria-hidden="true"></span>Online</span>
-  </header>
+<!-- Icon sprite. Each <symbol> is drawn with <use href="#id">. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-logo" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#1a1a1a"/><path d="M10 23 16 9l6 14" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.4 18h7.2" stroke="#ff5f1f" stroke-width="2.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 2.8 2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z" fill="currentColor"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z"/><path d="m9 12 2 2 4-4"/></g></symbol>
+  <symbol id="i-audit" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4M8.5 11l2 2 3.5-3.5"/></g></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/></g></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></g></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6.6 3.5h2.8l1.4 4.2-2.1 1.4a11 11 0 0 0 6.2 6.2l1.4-2.1 4.2 1.4v2.8a2 2 0 0 1-2.2 2A16.8 16.8 0 0 1 4.6 5.7a2 2 0 0 1 2-2.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></g></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></g></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.5v.01"/></g></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></g></symbol>
+</svg>
 
-  <main>
-    <h1><span class="w"><span>Cloud</span></span> <span class="w"><span>Static.</span></span></h1>
-    <div class="cluster" aria-hidden="true">
-      <span class="card c1"><i></i></span>
-      <span class="card c2"><i></i></span>
-      <span class="card c3"><i></i></span>
-      <span class="card c4"><i></i></span>
-      <span class="card c5"><i></i></span>
-      <span class="card c6"><i></i></span>
+<header class="site-header">
+  <div class="container">
+    <div class="header-inner">
+      <a class="logo" href="index.html" aria-label="Agex home">
+        <svg aria-hidden="true"><use href="#i-logo"/></svg>
+        Agex
+      </a>
+
+      <nav class="site-nav" aria-label="Primary">
+        <button class="menu-button" type="button" popovertarget="site-menu" popovertargetaction="toggle" aria-controls="site-menu">
+          <svg aria-hidden="true"><use href="#i-menu"/></svg>
+          <span>Menu</span>
+        </button>
+
+        <ul id="site-menu" class="site-menu" popover="auto">
+        <li><a href="products.html">Products</a></li>
+        <li><a href="#why">Why Agex</a></li>
+        <li><a href="#support">Support</a></li>
+        <li><a href="about.html">Our story</a></li>
+        <li><a href="contact.html">Contact</a></li>
+          <li class="menu-actions">
+            <!-- PLACEHOLDER: accounts arrive with the full launch -->
+            <a href="on-the-way.html">Log in</a>
+            <a class="btn btn-primary btn-sm" href="products.html">Explore products</a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Scroll progress: the Agex mark rides along the bottom of the pill (decorative) -->
+      <span class="route" aria-hidden="true"><span class="route-fill"></span><svg class="route-parcel"><use href="#i-logo"/></svg></span>
     </div>
-  </main>
+  </div>
+</header>
 
-  <footer>
-    <span>Served from Amazon EC2</span>
-    <button type="button" class="about" command="show-modal" commandfor="info">About this project <span aria-hidden="true">&rarr;</span></button>
-    <span>Est. 2026</span>
-  </footer>
-</div>
+<main id="main">
+  <!-- Hero -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <h1 id="hero-title">Tech the world hasn<span class="apos">&rsquo;</span>t seen <span class="scribble">yet</span><span class="punct">.</span></h1>
+        <p class="lead">Agex invents cloud, hardware and IT products you won't find anywhere else, then tests them until they simply work. Every one is backed by our own team.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="products.html">Explore products</a>
+          <a class="btn btn-outline" href="contact.html">Ask our team</a>
+        </div>
+        <!-- PLACEHOLDER: rating and review count must come from real reviews before launch. -->
+        <div class="proof">
+          <span class="stars" aria-hidden="true"><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg></span>
+          <p><strong>4.9 out of 5</strong> from 2,800+ customer reviews</p>
+        </div>
+      </div>
+      <div class="hero-art">
+        <img src="assets/hero.svg" width="560" height="460" alt="Hand-drawn doodle of the Agex Nimbus cube, with the Agex logo, syncing with its cloud" fetchpriority="high">
+      </div>
+    </div>
+  </section>
 
-<dialog id="info" closedby="any" aria-labelledby="info-title">
-  <h2 id="info-title">About this project</h2>
-  <p>A static website on AWS, built and deployed entirely as code.</p>
-  <ul>
-    <li><b>Terraform</b><span>Creates the network, firewall, EC2 instance, Elastic IP and DNS record.</span></li>
-    <li><b>Ansible</b><span>Installs nginx, sets up HTTPS, publishes this page and checks it works.</span></li>
-    <li><b>nginx</b><span>Serves this page from /var/www/html.</span></li>
-  </ul>
-  <p>Edit a file, rerun the playbook, and the site updates. Built by <a href="https://localhostshinn.xyz">Shin</a>.</p>
-  <button type="button" class="close" command="close" commandfor="info" autofocus>Close</button>
-</dialog>
-<script>
-// Cards follow the mouse a little (each at its own depth, --d).
-const cluster = document.querySelector(".cluster");
-if (matchMedia("(pointer: fine)").matches && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  addEventListener("pointermove", (e) => {
-    cluster.style.setProperty("--mx", (e.clientX / innerWidth - 0.5).toFixed(3));
-    cluster.style.setProperty("--my", (e.clientY / innerHeight - 0.5).toFixed(3));
-  }, { passive: true });
-}
+  <!-- 1. What we offer. PLACEHOLDER: imaginary products. -->
+  <section class="section section-alt" id="products" aria-labelledby="products-title">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <h2 class="section-title" id="products-title">What we make</h2>
+        <p>Three families of products: <strong>cloud</strong>, <strong>devices</strong> and <strong>workplace IT</strong>. One idea behind all of them: technology that quietly does more than you'd expect.</p>
+      </div>
+      <ul class="product-grid">
+        <li class="product" data-reveal>
+          <div class="product-media">
+            <span class="product-tag">Best seller</span>
+            <img src="assets/product-nimbus.svg" width="400" height="300" alt="Doodle of the Agex Nimbus cube, with the Agex logo, syncing with a cloud" loading="lazy">
+          </div>
+          <div class="product-body">
+            <span class="sku mono">Cloud &middot; AGX-NIMBUS</span>
+            <h3>Agex Nimbus</h3>
+            <p class="rating"><span class="stars" aria-hidden="true"><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg></span><strong>4.9</strong> (1,284 reviews)</p>
+            <p>A personal cloud you can hold. Keeps every file private and in sync across your devices, with no monthly fee.</p>
+            <div class="product-foot">
+              <span class="price">$149</span>
+              <a class="btn btn-outline btn-sm" href="products.html#nimbus">Meet Nimbus</a>
+            </div>
+          </div>
+        </li>
+        <li class="product" data-reveal>
+          <div class="product-media is-warm">
+            <span class="product-tag">New</span>
+            <img src="assets/product-halo.svg" width="400" height="300" alt="Doodle of the Agex Halo charging ring with the Agex logo on its stand" loading="lazy">
+          </div>
+          <div class="product-body">
+            <span class="sku mono">Devices &middot; AGX-HALO</span>
+            <h3>Agex Halo</h3>
+            <p class="rating"><span class="stars" aria-hidden="true"><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg></span><strong>4.8</strong> (903 reviews)</p>
+            <p>Drop any device inside the ring and it charges. No cables, no pads, no hunting for the right plug.</p>
+            <div class="product-foot">
+              <span class="price">$89</span>
+              <a class="btn btn-outline btn-sm" href="products.html#halo">Meet Halo</a>
+            </div>
+          </div>
+        </li>
+        <li class="product" data-reveal>
+          <div class="product-media">
+            <img src="assets/product-pulse.svg" width="400" height="300" alt="Doodle of the Agex Pulse server with the Agex logo and a heartbeat line" loading="lazy">
+          </div>
+          <div class="product-body">
+            <span class="sku mono">Workplace IT &middot; AGX-PULSE</span>
+            <h3>Agex Pulse</h3>
+            <p class="rating"><span class="stars" aria-hidden="true"><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg></span><strong>4.9</strong> (211 reviews)</p>
+            <p>An office server that spots problems a day before they happen, and quietly fixes most of them itself.</p>
+            <div class="product-foot">
+              <span class="price">$899</span>
+              <a class="btn btn-outline btn-sm" href="products.html#pulse">Meet Pulse</a>
+            </div>
+          </div>
+        </li>
+      </ul>
+      <div class="section-foot"><a class="btn btn-outline" href="products.html">Browse the full lineup <span aria-hidden="true">&rarr;</span></a></div>
+    </div>
+  </section>
 
-// Fallbacks for browsers without command/commandfor or closedby (e.g. older Safari).
-const info = document.getElementById("info");
-if (!("commandForElement" in HTMLButtonElement.prototype))
-  for (const b of document.querySelectorAll("[commandfor]"))
-    b.addEventListener("click", () => b.getAttribute("command") === "close" ? info.close() : info.showModal());
-if (!("closedBy" in HTMLDialogElement.prototype)) {
-  const out = (e) => { const r = info.getBoundingClientRect(); return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom; };
-  let down = false;
-  info.addEventListener("pointerdown", (e) => { down = out(e); });
-  info.addEventListener("pointerup", (e) => { if (down && out(e)) info.close(); });
-}
-</script>
+  <!-- 2. How reliable. PLACEHOLDER: realistic example figures; replace them with real, measured ones. -->
+  <section class="section" id="why" aria-labelledby="why-title">
+    <div class="container why-grid">
+      <div class="why-copy" data-reveal>
+        <h2 class="section-title" id="why-title">Built to keep working</h2>
+        <p>New ideas are only worth it if they're dependable. Every Agex product passes the same long list of tests before anyone can buy it, and we keep measuring after it ships.</p>
+        <ul class="checklist">
+          <li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="m5 12.5 4.5 4.5L19 7.5"/></svg>Heat, cold, drop and water tests on every model</li>
+          <li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="m5 12.5 4.5 4.5L19 7.5"/></svg>Three months of daily use in real offices before launch</li>
+          <li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="m5 12.5 4.5 4.5L19 7.5"/></svg>Round-the-clock monitoring of every cloud service</li>
+        </ul>
+      </div>
+      <div class="stats-wrap">
+        <dl class="stats">
+          <div class="stat" data-reveal><dt>Cloud uptime over the last 12 months</dt><dd data-count-up>99.9%</dd></div>
+          <div class="stat" data-reveal><dt>Of stress testing for every product before launch</dt><dd data-count-up>1,000 h</dd></div>
+          <div class="stat" data-reveal><dt>Warranty on every Agex device</dt><dd data-count-up>2 years</dd></div>
+          <div class="stat" data-reveal><dt>Of devices returned with a fault in 2026</dt><dd data-count-up>1.8%</dd></div>
+        </dl>
+        <p class="stats-note">Figures from January to November 2026, updated every quarter.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Why trust us. PLACEHOLDER: sample quotes and made-up company names. Publish only real reviews. -->
+  <section class="section section-alt" id="trust" aria-labelledby="trust-title">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <h2 class="section-title" id="trust-title">Why people trust us</h2>
+        <p>Rated <strong>4.9 out of 5</strong> by more than 2,800 customers, and used by teams at companies large and small.</p>
+      </div>
+      <ul class="trust-points">
+        <li class="trust-point" data-reveal><svg aria-hidden="true"><use href="#i-shield"/></svg><h3>Your data stays yours</h3><p>Files and keys are encrypted on your own device. We can't read them, and we never sell your data.</p></li>
+        <li class="trust-point" data-reveal><svg aria-hidden="true"><use href="#i-audit"/></svg><h3>Checked by outside experts</h3><p>Independent security teams test every product each year, and we publish what they find.</p></li>
+        <li class="trust-point" data-reveal><svg aria-hidden="true"><use href="#i-tag"/></svg><h3>Clear prices, no lock-in</h3><p>No hidden fees and no forced subscriptions. You have 30 days to change your mind.</p></li>
+      </ul>
+      <ul class="postcards">
+        <li class="postcard" data-reveal>
+          <figure>
+            <span class="stars" aria-hidden="true"><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg></span>
+            <span class="sr-only">Rated 5 out of 5.</span>
+            <blockquote><p>Pulse flagged a failing drive in our office two days before it died. We swapped it over lunch and nobody noticed a thing.</p></blockquote>
+            <figcaption><span class="avatar av-1" aria-hidden="true">MR</span><span><strong>Maya R.</strong>IT manager, Nordvane</span></figcaption>
+          </figure>
+        </li>
+        <li class="postcard is-featured" data-reveal>
+          <figure>
+            <span class="stars" aria-hidden="true"><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg></span>
+            <span class="sr-only">Rated 5 out of 5.</span>
+            <blockquote><p>Nimbus replaced three cloud subscriptions for our team. When we had a setup question, someone from Agex answered within the hour.</p></blockquote>
+            <figcaption><span class="avatar av-2" aria-hidden="true">DK</span><span><strong>Daniel K.</strong>Founder, Lumora Studio</span></figcaption>
+          </figure>
+        </li>
+        <li class="postcard" data-reveal>
+          <figure>
+            <span class="stars" aria-hidden="true"><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg></span>
+            <span class="sr-only">Rated 5 out of 5.</span>
+            <blockquote><p>I haven't typed a password in months thanks to Keystone. It's the first security product our whole team actually likes.</p></blockquote>
+            <figcaption><span class="avatar av-3" aria-hidden="true">PS</span><span><strong>Priya S.</strong>Operations lead, Tidewell</span></figcaption>
+          </figure>
+        </li>
+      </ul>
+      <div class="logos">
+        <h3 class="mono">Used by teams at</h3>
+        <ul class="logo-row">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9h-9z"/></svg>Arcwell</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 21 20H3z"/></svg>Nordvane</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5 20.5 7.25v9.5L12 21.5 3.5 16.75v-9.5z"/></svg>Hexaplant</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 22 12 12 22 2 12z"/></svg>Corvix</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="12" r="6.5" fill="currentColor"/><circle cx="15" cy="12" r="6.5" fill="currentColor" opacity=".55"/></svg>Lumora</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 4h18v4H3zM3 10h12v4H3zM3 16h6v4H3z"/></svg>Tidewell</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. How we look after you -->
+  <section class="section" id="support" aria-labelledby="support-title">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <h2 class="section-title" id="support-title">How we look after you</h2>
+        <p>From your first question to years after you buy, you deal with the same team that designed the product.</p>
+      </div>
+      <ol class="steps">
+        <li class="step" data-reveal><span class="mono">Step 01</span><h3>Ask us anything</h3><p>Not sure what fits? Tell us what you need and we'll recommend the right product. No sales script.</p></li>
+        <li class="step" data-reveal><span class="mono">Step 02</span><h3>Ready out of the box</h3><p>Every product arrives charged and set up. Guided setup takes minutes, or we can do it with you remotely.</p></li>
+        <li class="step" data-reveal><span class="mono">Step 03</span><h3>Support, 7 days a week</h3><p>Chat, email or phone with the team that built it. Most questions are answered within the hour.</p></li>
+        <li class="step" data-reveal><span class="mono">Step 04</span><h3>Better every year</h3><p>Free software updates bring new features, and a two-year warranty covers the hardware.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Call to action -->
+  <section class="cta" aria-labelledby="cta-title">
+    <div class="container">
+      <div class="cta-box" data-reveal>
+        <h2 id="cta-title">Find the Agex that fits you<span class="punct">.</span></h2>
+        <p>Browse all six products, or ask our team which one is right for you.</p>
+        <div class="cta-actions">
+          <svg class="cta-doodle" viewBox="0 0 120 80" aria-hidden="true">
+            <path d="M6 12c22-9 44 4 36 22-6 13-24 6-14-4 14-13 46 6 74 26" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="m90 46 12 10-15 4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <a class="btn btn-primary" href="products.html">Explore products</a>
+          <a class="btn btn-outline" href="contact.html">Ask our team</a>
+        </div>
+        <ul class="guarantees">
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>Free delivery</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>30-day returns</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg>2-year warranty</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="logo" href="index.html" aria-label="Agex home">
+          <svg aria-hidden="true"><use href="#i-logo"/></svg>
+          Agex
+        </a>
+        <p>Tech the world hasn't seen yet. Built to last, and backed by the team that made it.</p>
+        <!-- PLACEHOLDER: agex.example, 555-01xx numbers and Example Street are reserved for examples. -->
+        <address class="return-address">
+          <span class="mono">Get in touch</span>
+          <ul class="contact-list">
+            <li><svg aria-hidden="true"><use href="#i-mail"/></svg><a href="mailto:hello@agex.example">hello@agex.example</a></li>
+            <li><svg aria-hidden="true"><use href="#i-phone"/></svg><a href="tel:+12125550142">+1 (212) 555-0142</a></li>
+            <li><svg aria-hidden="true"><use href="#i-pin"/></svg><span>100 Example Street, Springfield</span></li>
+          </ul>
+        </address>
+      </div>
+      <div class="footer-col">
+        <h2 class="footer-title">Products</h2>
+        <ul>
+          <li><a href="products.html">All products</a></li>
+          <li><a href="products.html?c=cloud">Cloud</a></li>
+          <li><a href="products.html?c=devices">Devices</a></li>
+          <li><a href="products.html?c=workplace">Workplace IT</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h2 class="footer-title">Company</h2>
+        <ul>
+          <li><a href="about.html">Our story</a></li>
+          <li><a href="on-the-way.html">What's coming</a></li>
+          <li><a href="on-the-way.html">Careers</a><span class="soon">Soon</span></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h2 class="footer-title">Help</h2>
+        <ul>
+          <li><a href="contact.html#faq">FAQ</a></li>
+          <li><a href="terms.html#delivery">Delivery</a></li>
+          <li><a href="terms.html#returns">Returns</a></li>
+          <li><a href="terms.html#warranty">Warranty</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; 2026 Agex. All rights reserved.</p>
+      <div class="payments">
+        <span class="secure"><svg aria-hidden="true"><use href="#i-lock"/></svg>Secure payments</span>
+        <ul class="chips" aria-label="Accepted payment methods">
+          <li class="chip">Visa</li>
+          <li class="chip">Mastercard</li>
+          <li class="chip">PayPal</li>
+          <li class="chip">Apple Pay</li>
+        </ul>
+      </div>
+      <ul class="footer-legal">
+        <li><a href="privacy.html">Privacy</a></li>
+        <li><a href="terms.html">Terms</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wordmark" aria-hidden="true">agex</div>
+</footer>
 </body>
 </html>

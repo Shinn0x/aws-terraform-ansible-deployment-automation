@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Agex Pulse doodle: a small server tower with a heartbeat line and the Agex logo. -->
+  <defs>
+    <filter id="rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="31" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rough-soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="40" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
+      <path d="M0 0V7" stroke="#1a1a1a" stroke-width="1.3" opacity=".5"/>
+    </pattern>
+  </defs>
+  <g filter="url(#rough)"><path d="M92 226Q205 232 318 224" stroke="#1a1a1a" stroke-width="3"/><path d="M142 238H195M219 237H245" stroke="#1a1a1a" stroke-width="2.5"/></g>
+  <g filter="url(#rough)"><path d="M140 66H240V218H140Z" fill="#ffb08a" transform="translate(-7 7)"/><path d="M140 66L182 35.2H282L240 66Z" fill="#fff"/><path d="M240 66L282 35.2V187.2L240 218Z" fill="#f2efec"/><path d="M240 66L282 35.2V187.2L240 218Z" fill="url(#hatch)"/><path d="M140 66H240V218H140Z" fill="#fff"/><path d="M140 66L182 35.2H282L240 66ZM240 66L282 35.2V187.2L240 218ZM140 66H240V218H140Z" stroke="#1a1a1a" stroke-width="3"/><g transform="translate(172 139.2) scale(1.125)"><rect width="32" height="32" rx="8" fill="#1a1a1a"/><path d="M10 23 16 9l6 14" stroke="#fff" stroke-width="3"/><path d="M12.4 18h7.2" stroke="#ff5f1f" stroke-width="3"/></g><path d="M156 82H224" stroke="#1a1a1a" stroke-width="2.5"/><path d="M156 94H224" stroke="#1a1a1a" stroke-width="2.5"/><path d="M156 106H224" stroke="#1a1a1a" stroke-width="2.5"/><path d="M152 198H177.8L185.4 185L194.6 208L200.6 198H228" stroke="#ff5f1f" stroke-width="3.5"/></g>
+  <g filter="url(#rough)"><circle cx="306" cy="88" r="22" fill="#ffb08a" transform="translate(-4 4)"/><circle cx="306" cy="88" r="22" fill="#fff" stroke="#1a1a1a" stroke-width="3"/><path d="m296 88 7 7 13-14" stroke="#ff5f1f" stroke-width="3.5"/></g>
+</svg>
