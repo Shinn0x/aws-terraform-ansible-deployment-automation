@@ -1,12 +1,12 @@
 # EC2 Module
 
-Creates the EC2 web server instance.
+Creates the EC2 web server instance and its Elastic IP.
 
 | Setting | Value |
 |---|---|
 | AMI | Latest Amazon Linux 2023 (x86_64), from the AWS public SSM parameter `/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64` |
 | Instance type | `t3.micro` by default (Free Tier eligible) |
-| Public IP | Yes, so the instance can reach the internet through the internet gateway |
+| Public IP | Elastic IP, so the address stays the same when the instance stops and starts |
 | Instance metadata | IMDSv2 required |
 | Root disk | gp3, encrypted |
 | SSH key | None. Connect with AWS Systems Manager Session Manager. |
@@ -50,7 +50,7 @@ module "web_server" {
 | Name | Description |
 |---|---|
 | `instance_id` | ID of the instance |
-| `public_ip` | Public IP address |
-| `public_dns` | Public DNS name |
+| `public_ip` | Elastic IP address |
+| `public_dns` | Public DNS name of the Elastic IP |
 | `private_ip` | Private IP address |
 | `ami_id` | AMI the instance was created from |

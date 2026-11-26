@@ -26,7 +26,7 @@ The authentication path (GitHub Actions → STS), the state bucket and the Terra
 |---|---|---|---|
 | 01 State bucket | `bootstrap/01-state-bucket/` | AWS CLI (Bash) | Done |
 | 02 GitHub OIDC | `bootstrap/02-github-oidc/` | Terraform, local state | Done |
-| 03 Infrastructure | `infrastructure/` | Terraform, S3 backend | In progress: modules and dev/prod environments written, CI permissions for security groups, IAM and EC2 still missing |
+| 03 Infrastructure | `infrastructure/` | Terraform, S3 backend | In progress: modules, dev/prod environments and CI permissions written, not applied yet |
 | 04 Configuration and deployment | `configuration/`, `application/` | Ansible | Planned |
 | 05 Verification | `scripts/` | Bash | Planned |
 
@@ -48,7 +48,7 @@ GitHub Actions never stores long-lived AWS access keys.
 3. AWS checks the trust policy: the audience must be `sts.amazonaws.com` and the subject must be the `main` branch of this repository.
 4. STS returns temporary credentials for the workflow run.
 
-The role can read and write the Terraform state bucket and manage the VPC, subnet, internet gateway and route table in this account and region. It can't manage security groups, IAM roles or EC2 instances yet, so the `deploy` job stops at `terraform plan` for dev until those permissions are added.
+The role can read and write the Terraform state bucket and manage the VPC, subnet, internet gateway and route table in this account and region. It can also manage the web server's security group, IAM role and instance profile, instance, Elastic IP and Route 53 records, each limited to this project.
 
 ## Account-Specific Values
 
@@ -94,7 +94,7 @@ flowchart LR
 - `vpc`: a VPC, one public subnet, an internet gateway and a public route table
 - `security-group`: the web server security group (HTTP and HTTPS in, HTTP and HTTPS out)
 - `iam`: the EC2 role with `AmazonSSMManagedInstanceCore`, and its instance profile
-- `ec2`: the Amazon Linux 2023 web server (IMDSv2, encrypted disk, no SSH key)
+- `ec2`: the Amazon Linux 2023 web server with an Elastic IP (IMDSv2, encrypted disk, no SSH key)
 
 `infrastructure/environments/dev/` and `prod/` are the only places Terraform runs. Each one holds the `terraform` block with the S3 backend, the AWS provider with `default_tags`, and the locals, and calls all four modules. dev uses `10.20.0.0/16`, prod uses `10.30.0.0/16`. GitHub Actions applies dev on every push to `main`, and prod only on a manual run.
 

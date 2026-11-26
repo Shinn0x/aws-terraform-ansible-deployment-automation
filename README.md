@@ -314,7 +314,7 @@ The code is split in two:
 | `vpc` | VPC, public subnet, internet gateway, route table | [README](infrastructure/modules/vpc/README.md) |
 | `security-group` | Web server security group: HTTP and HTTPS in, HTTP and HTTPS out | [README](infrastructure/modules/security-group/README.md) |
 | `iam` | EC2 role with `AmazonSSMManagedInstanceCore`, and its instance profile | [README](infrastructure/modules/iam/README.md) |
-| `ec2` | Amazon Linux 2023 web server: IMDSv2, encrypted disk, no SSH key | [README](infrastructure/modules/ec2/README.md) |
+| `ec2` | Amazon Linux 2023 web server with an Elastic IP: IMDSv2, encrypted disk, no SSH key | [README](infrastructure/modules/ec2/README.md) |
 
 Each environment calls all four modules. The settings that differ:
 
@@ -369,7 +369,16 @@ gh workflow enable terraform.yaml
 
 ### CI Permissions
 
-The GitHub Actions role can only manage the VPC so far (`VpcRead` and `VpcManage` in `github-actions-policy.json`). Until it also gets permissions for security groups, IAM roles and instance profiles, EC2 instances, Route 53 records, and reading the AMI parameter from SSM, the `deploy` job stops at `terraform plan` with `AccessDenied`. Nothing is created in that case.
+`github-actions-policy.json` lets the GitHub Actions role manage everything the environments create: the VPC, the security group, the web server role and instance profile, the instance and its Elastic IP, and the website A records in Route 53. It can also read the AMI parameter from SSM. Each statement is limited to this account, region or project names. The statements are listed in [GitHub Actions OIDC Setup](docs/02-github-actions-oidc.md).
+
+The policy is applied from your machine, not by CI:
+
+```bash
+set -a && source .env && set +a
+cd bootstrap/02-github-oidc
+terraform plan    # only aws_iam_policy.github_actions changes, in place
+terraform apply
+```
 
 ## Section 04 — Configuration and Deployment
 
@@ -413,7 +422,7 @@ The final stage will run automated health checks to confirm that the website is 
 - [x] VPC applied by CI and verified (6 resources), then destroyed locally with `terraform destroy`
 - [x] Security group, IAM and EC2 modules created
 - [x] Modules split from environments: `infrastructure/environments/dev` and `prod` call all four modules
-- [ ] CI role permissions for security groups, IAM and EC2
+- [x] CI role permissions for security groups, IAM, EC2, Elastic IP and Route 53 written
 - [ ] dev environment applied and verified
 - [ ] Automate deployment with Ansible
 - [ ] Add deployment health checks

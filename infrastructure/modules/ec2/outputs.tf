@@ -4,13 +4,13 @@ output "instance_id" {
 }
 
 output "public_ip" {
-  description = "Public IP address of the EC2 instance"
-  value       = aws_instance.web.public_ip
+  description = "Elastic IP address of the EC2 instance"
+  value       = aws_eip.web.public_ip
 }
 
 output "public_dns" {
-  description = "Public DNS name of the EC2 instance"
-  value       = aws_instance.web.public_dns
+  description = "Public DNS name of the Elastic IP"
+  value       = aws_eip.web.public_dns
 }
 
 output "private_ip" {

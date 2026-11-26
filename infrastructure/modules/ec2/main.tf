@@ -33,3 +33,13 @@ resource "aws_instance" "web" {
     ignore_changes = [ami]
   }
 }
+
+# Keep the same public IP when the instance stops and starts
+resource "aws_eip" "web" {
+  domain   = "vpc"
+  instance = aws_instance.web.id
+
+  tags = {
+    Name = var.name
+  }
+}
