@@ -1,10 +1,11 @@
-
+# AWS region for the IAM resources
 variable "aws_region" {
   description = "AWS region for the OIDC bootstrap"
   type        = string
   default     = "ap-southeast-1"
 }
 
+# Account ID has no default so it is never committed. It comes from .env.
 variable "aws_account_id" {
   description = "AWS account this configuration may run against. Set TF_VAR_aws_account_id in .env."
   type        = string
@@ -15,12 +16,15 @@ variable "aws_account_id" {
   }
 }
 
+# Environment name, used for tags
 variable "environment" {
   description = "Deployment environment"
   type        = string
   default     = "dev"
 }
 
+# The GitHub repository and branch that may assume the role.
+# The numeric IDs have no defaults so they are never committed. They come from .env.
 variable "github_owner" {
   description = "GitHub repository owner"
   type        = string
@@ -59,6 +63,7 @@ variable "github_branch" {
   default     = "main"
 }
 
+# State bucket the role may read and write
 variable "state_bucket_name" {
   description = "S3 bucket that stores Terraform state (created by 01-state-bucket)"
   type        = string

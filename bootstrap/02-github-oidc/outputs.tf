@@ -1,4 +1,4 @@
-
+# Values printed after apply
 output "aws_account_id" {
   description = "AWS account ID"
   value       = data.aws_caller_identity.current.account_id
@@ -9,6 +9,7 @@ output "github_oidc_provider_arn" {
   value       = aws_iam_openid_connect_provider.github.arn
 }
 
+# Use this value for the AWS_ROLE_ARN repository secret
 output "github_actions_role_arn" {
   description = "IAM role ARN for GitHub Actions"
   value       = aws_iam_role.github_actions.arn

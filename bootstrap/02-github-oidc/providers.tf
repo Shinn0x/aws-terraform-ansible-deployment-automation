@@ -1,3 +1,4 @@
+# Terraform and AWS provider versions
 terraform {
   required_version = ">= 1.5.0"
 
@@ -9,6 +10,7 @@ terraform {
   }
 }
 
+# Shared values for tags
 locals {
   project_name = "aws-terraform-ansible-deployment-automation"
   environment  = var.environment
@@ -20,12 +22,14 @@ locals {
   }
 }
 
+# Configure the AWS provider
 provider "aws" {
   region = var.aws_region
 
   # Fail before any change if the credentials belong to a different account
   allowed_account_ids = [var.aws_account_id]
 
+  # Add the common tags to every resource this provider creates
   default_tags {
     tags = local.common_tags
   }
