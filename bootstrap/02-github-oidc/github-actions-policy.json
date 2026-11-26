@@ -80,6 +80,193 @@
                 "arn:aws:ec2:${aws_region}:${account_id}:internet-gateway/*",
                 "arn:aws:ec2:${aws_region}:${account_id}:route-table/*"
             ]
+        },
+        {
+            "Sid": "Ec2Read",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeInstances",
+                "ec2:DescribeInstanceAttribute",
+                "ec2:DescribeInstanceTypes",
+                "ec2:DescribeInstanceCreditSpecifications",
+                "ec2:DescribeIamInstanceProfileAssociations",
+                "ec2:DescribeVolumes",
+                "ec2:DescribeImages",
+                "ec2:DescribeTags",
+                "ec2:DescribeAddresses",
+                "ec2:DescribeAddressesAttribute",
+                "ec2:DescribeSecurityGroupRules"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringEquals": {
+                    "aws:RequestedRegion": "${aws_region}"
+                }
+            }
+        },
+        {
+            "Sid": "SecurityGroupManage",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:CreateSecurityGroup",
+                "ec2:DeleteSecurityGroup",
+                "ec2:AuthorizeSecurityGroupIngress",
+                "ec2:AuthorizeSecurityGroupEgress",
+                "ec2:RevokeSecurityGroupIngress",
+                "ec2:RevokeSecurityGroupEgress",
+                "ec2:ModifySecurityGroupRules",
+                "ec2:UpdateSecurityGroupRuleDescriptionsIngress",
+                "ec2:UpdateSecurityGroupRuleDescriptionsEgress",
+                "ec2:CreateTags",
+                "ec2:DeleteTags"
+            ],
+            "Resource": [
+                "arn:aws:ec2:${aws_region}:${account_id}:security-group/*",
+                "arn:aws:ec2:${aws_region}:${account_id}:security-group-rule/*",
+                "arn:aws:ec2:${aws_region}:${account_id}:vpc/*"
+            ]
+        },
+        {
+            "Sid": "InstanceManage",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:RunInstances",
+                "ec2:TerminateInstances",
+                "ec2:StartInstances",
+                "ec2:StopInstances",
+                "ec2:ModifyInstanceAttribute",
+                "ec2:ModifyInstanceMetadataOptions",
+                "ec2:ModifyVolume",
+                "ec2:AssociateIamInstanceProfile",
+                "ec2:ReplaceIamInstanceProfileAssociation",
+                "ec2:DisassociateIamInstanceProfile",
+                "ec2:CreateTags",
+                "ec2:DeleteTags"
+            ],
+            "Resource": [
+                "arn:aws:ec2:${aws_region}::image/*",
+                "arn:aws:ec2:${aws_region}:${account_id}:instance/*",
+                "arn:aws:ec2:${aws_region}:${account_id}:volume/*",
+                "arn:aws:ec2:${aws_region}:${account_id}:network-interface/*",
+                "arn:aws:ec2:${aws_region}:${account_id}:security-group/*",
+                "arn:aws:ec2:${aws_region}:${account_id}:subnet/*"
+            ]
+        },
+        {
+            "Sid": "ElasticIpManage",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:AllocateAddress",
+                "ec2:ReleaseAddress",
+                "ec2:AssociateAddress",
+                "ec2:DisassociateAddress",
+                "ec2:CreateTags",
+                "ec2:DeleteTags"
+            ],
+            "Resource": [
+                "arn:aws:ec2:${aws_region}:${account_id}:elastic-ip/*",
+                "arn:aws:ec2:${aws_region}:${account_id}:instance/*",
+                "arn:aws:ec2:${aws_region}:${account_id}:network-interface/*"
+            ]
+        },
+        {
+            "Sid": "AmiParameterRead",
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetParameter"
+            ],
+            "Resource": "arn:aws:ssm:${aws_region}:*:parameter/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
+        },
+        {
+            "Sid": "InstanceRoleManage",
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateRole",
+                "iam:GetRole",
+                "iam:DeleteRole",
+                "iam:UpdateRole",
+                "iam:UpdateRoleDescription",
+                "iam:UpdateAssumeRolePolicy",
+                "iam:TagRole",
+                "iam:UntagRole",
+                "iam:ListRolePolicies",
+                "iam:ListAttachedRolePolicies",
+                "iam:ListInstanceProfilesForRole",
+                "iam:CreateInstanceProfile",
+                "iam:GetInstanceProfile",
+                "iam:DeleteInstanceProfile",
+                "iam:AddRoleToInstanceProfile",
+                "iam:RemoveRoleFromInstanceProfile",
+                "iam:TagInstanceProfile",
+                "iam:UntagInstanceProfile"
+            ],
+            "Resource": [
+                "arn:aws:iam::${account_id}:role/aws-terraform-ansible-deployment-automation-*-web-role",
+                "arn:aws:iam::${account_id}:instance-profile/aws-terraform-ansible-deployment-automation-*-web-profile"
+            ]
+        },
+        {
+            "Sid": "InstanceRoleSsmPolicyOnly",
+            "Effect": "Allow",
+            "Action": [
+                "iam:AttachRolePolicy",
+                "iam:DetachRolePolicy"
+            ],
+            "Resource": "arn:aws:iam::${account_id}:role/aws-terraform-ansible-deployment-automation-*-web-role",
+            "Condition": {
+                "ArnEquals": {
+                    "iam:PolicyARN": "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+                }
+            }
+        },
+        {
+            "Sid": "InstanceRolePass",
+            "Effect": "Allow",
+            "Action": [
+                "iam:PassRole"
+            ],
+            "Resource": "arn:aws:iam::${account_id}:role/aws-terraform-ansible-deployment-automation-*-web-role",
+            "Condition": {
+                "StringEquals": {
+                    "iam:PassedToService": "ec2.amazonaws.com"
+                }
+            }
+        },
+        {
+            "Sid": "Route53Read",
+            "Effect": "Allow",
+            "Action": [
+                "route53:ListHostedZones",
+                "route53:ListHostedZonesByName",
+                "route53:GetHostedZone",
+                "route53:ListResourceRecordSets",
+                "route53:ListTagsForResource",
+                "route53:GetChange"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "Route53RecordManage",
+            "Effect": "Allow",
+            "Action": [
+                "route53:ChangeResourceRecordSets"
+            ],
+            "Resource": "arn:aws:route53:::hostedzone/*",
+            "Condition": {
+                "ForAllValues:StringEquals": {
+                    "route53:ChangeResourceRecordSetsNormalizedRecordNames": [
+                        "agex.localhostshinn.xyz",
+                        "agex-dev.localhostshinn.xyz"
+                    ],
+                    "route53:ChangeResourceRecordSetsRecordTypes": [
+                        "A"
+                    ]
+                },
+                "Null": {
+                    "route53:ChangeResourceRecordSetsNormalizedRecordNames": "false",
+                    "route53:ChangeResourceRecordSetsRecordTypes": "false"
+                }
+            }
         }
     ]
 }

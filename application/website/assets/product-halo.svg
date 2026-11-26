@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Agex Halo doodle: an upright charging ring on a stand with the Agex logo. -->
+  <defs>
+    <filter id="rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="21" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rough-soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="30" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
+      <path d="M0 0V7" stroke="#1a1a1a" stroke-width="1.3" opacity=".5"/>
+    </pattern>
+  </defs>
+  <g filter="url(#rough)"><path d="M96 234Q200 240 304 232" stroke="#1a1a1a" stroke-width="3"/><path d="M146 246H190M214 245H240" stroke="#1a1a1a" stroke-width="2.5"/></g>
+  <g filter="url(#rough)"><path d="M124 120a76 76 0 1 0 152 0a76 76 0 1 0 -152 0ZM150 120a50 50 0 1 1 100 0a50 50 0 1 1 -100 0Z" fill="#ffb08a" fill-rule="evenodd" transform="translate(-7 7)"/><path d="M124 120a76 76 0 1 0 152 0a76 76 0 1 0 -152 0ZM150 120a50 50 0 1 1 100 0a50 50 0 1 1 -100 0Z" fill="#ff5f1f" fill-rule="evenodd" stroke="#1a1a1a" stroke-width="3"/><path d="M146 186H254L272 228H128Z" fill="#fff" stroke="#1a1a1a" stroke-width="3"/><path d="M206 90L184 126H200L194 150L218 114H202L210 90Z" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><g transform="translate(186 194) scale(0.875)"><rect width="32" height="32" rx="8" fill="#1a1a1a"/><path d="M10 23 16 9l6 14" stroke="#fff" stroke-width="3"/><path d="M12.4 18h7.2" stroke="#ff5f1f" stroke-width="3"/></g></g>
+  <g filter="url(#rough)"><path d="M318 57V71M311 64H325M315.1 61.1L320.9 66.9M320.9 61.1L315.1 66.9" stroke="#ff5f1f" stroke-width="2.5"/><path d="M86 90V102M80 96H92M83.5 93.5L88.5 98.5M88.5 93.5L83.5 98.5" stroke="#1a1a1a" stroke-width="2.5"/></g>
+</svg>

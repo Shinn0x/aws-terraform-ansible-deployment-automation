@@ -393,8 +393,22 @@ So the account ID is never written into the repository.
 | `TerraformStateObjectAccess` | `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` | Objects in the state bucket, including the `.tflock` lock files |
 | `VpcRead` | `ec2:Describe*` calls that Terraform uses to read the VPC, subnet, internet gateway, route tables and availability zones | `*`, limited to the region by `aws:RequestedRegion`. Describe calls can't be scoped to a resource ARN. |
 | `VpcManage` | Create, modify, delete and tag the VPC, subnet, internet gateway, route table, routes and route table associations | `vpc/*`, `subnet/*`, `internet-gateway/*` and `route-table/*` ARNs in this account and region only |
+| `Ec2Read` | `ec2:Describe*` calls for instances, volumes, images, Elastic IPs and security group rules | `*`, limited to the region |
+| `SecurityGroupManage` | Create, delete and tag the security group and its rules | `security-group/*`, `security-group-rule/*` and `vpc/*` in this account and region |
+| `InstanceManage` | Launch, stop, start, modify, tag and terminate the instance | The instance, its volume, network interface, subnet and security group, and AMIs in the region |
+| `ElasticIpManage` | Allocate, associate, tag and release the Elastic IP | `elastic-ip/*`, `instance/*` and `network-interface/*` in this account and region |
+| `AmiParameterRead` | `ssm:GetParameter` | Only the Amazon Linux 2023 AMI parameter |
+| `InstanceRoleManage` | Create, read, tag and delete the web server role and instance profile | Roles and instance profiles named `aws-terraform-ansible-deployment-automation-*-web-*` |
+| `InstanceRoleSsmPolicyOnly` | Attach and detach role policies | The web server role, and only `AmazonSSMManagedInstanceCore` |
+| `InstanceRolePass` | `iam:PassRole` | The web server role, and only to EC2 |
+| `Route53Read` | Read hosted zones, records and change status | `*` (read only) |
+| `Route53RecordManage` | `route53:ChangeResourceRecordSets` | Only A records named `agex.localhostshinn.xyz` and `agex-dev.localhostshinn.xyz` |
 
-The EC2 action names were checked against the [AWS Service Authorization Reference](https://servicereference.us-east-1.amazonaws.com/v1/ec2/ec2.json). Stage 03 will add permissions for EC2 instances, security groups and instance IAM when that code exists.
+The action names and resource types were checked against the AWS Service Authorization Reference ([EC2](https://servicereference.us-east-1.amazonaws.com/v1/ec2/ec2.json), [IAM](https://servicereference.us-east-1.amazonaws.com/v1/iam/iam.json), [Route 53](https://servicereference.us-east-1.amazonaws.com/v1/route53/route53.json), [SSM](https://servicereference.us-east-1.amazonaws.com/v1/ssm/ssm.json)), and the policy passes IAM Access Analyzer `ValidatePolicy` with no findings.
+
+`iam:PassRole` is limited to the web server role and to EC2. With `Resource: "*"`, the CI role could pass any role in the account to an instance, including an admin role.
+
+If you rename the website records in `infrastructure/environments/*/variables.tf`, update the names in `Route53RecordManage` too.
 
 `AllowIdentityCheck` lets a workflow run `aws sts get-caller-identity` to confirm which role it is using.
 
@@ -538,6 +552,6 @@ The role's trust policy now allows only the `main` branch of this repository.
 
 ## Next Stage
 
-Section 03 uses the S3 bucket from Section 01 as the remote backend for the VPC (`vpc/terraform.tfstate`).
+Section 03 uses the S3 bucket from Section 01 as the remote backend for the dev and prod environments (`environments/dev/terraform.tfstate` and `environments/prod/terraform.tfstate`).
 
 The OIDC bootstrap state can later be migrated from local storage to S3 in the same way.

@@ -12,10 +12,10 @@ terraform {
 provider "aws" {
   region = var.aws_region
 
-  # Fail before any change if the credentials belong to a different account
+  # Only allow this AWS account
   allowed_account_ids = [var.aws_account_id]
 
-  # Add the common tags to every resource this provider creates
+  # Add common tags to all resources
   default_tags {
     tags = local.common_tags
   }

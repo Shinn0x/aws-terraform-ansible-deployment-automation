@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Trust doodle: a shield with the Agex logo, for 'your data stays yours'. -->
+  <defs>
+    <filter id="rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="81" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rough-soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="90" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
+      <path d="M0 0V7" stroke="#1a1a1a" stroke-width="1.3" opacity=".5"/>
+    </pattern>
+  </defs>
+  <g filter="url(#rough)"><path d="M100 14C118 24 134 27 148 27V70C148 104 126 126 100 138C74 126 52 104 52 70V27C66 27 82 24 100 14Z" fill="#ffb08a" transform="translate(-7 7)"/><path d="M100 14C118 24 134 27 148 27V70C148 104 126 126 100 138C74 126 52 104 52 70V27C66 27 82 24 100 14Z" fill="#fff" stroke="#1a1a1a" stroke-width="3.5"/><path d="M100 28C113 35 125 38 135 38V70C135 97 119 114 100 124C81 114 65 97 65 70V38C75 38 87 35 100 28Z" stroke="#1a1a1a" stroke-width="2" stroke-dasharray="2 7"/><g transform="translate(80 54) scale(1.250)"><rect width="32" height="32" rx="8" fill="#1a1a1a"/><path d="M10 23 16 9l6 14" stroke="#fff" stroke-width="3"/><path d="M12.4 18h7.2" stroke="#ff5f1f" stroke-width="3"/></g></g>
+  <g filter="url(#rough)"><path d="M164 40q9 7 9 18M36 96q-9 7-8 18" stroke="#1a1a1a" stroke-width="3"/></g>
+  <g filter="url(#rough)"><path d="M30 31V45M23 38H37M27.1 35.1L32.9 40.9M32.9 35.1L27.1 40.9" stroke="#ff5f1f" stroke-width="2.5"/><path d="M174 106V118M168 112H180M171.5 109.5L176.5 114.5M176.5 109.5L171.5 114.5" stroke="#1a1a1a" stroke-width="2.5"/></g>
+</svg>

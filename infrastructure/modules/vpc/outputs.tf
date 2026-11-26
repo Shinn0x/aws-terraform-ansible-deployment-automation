@@ -1,4 +1,3 @@
-# IDs printed after apply. The EC2 and security group code will need them later.
 output "vpc_id" {
   description = "ID of the created VPC"
   value       = aws_vpc.main.id
@@ -7,6 +6,9 @@ output "vpc_id" {
 output "public_subnet_id" {
   description = "ID of the public subnet"
   value       = aws_subnet.public.id
+
+  # Wait until the subnet has a route to the internet
+  depends_on = [aws_route.public_internet, aws_route_table_association.public]
 }
 
 output "internet_gateway_id" {
