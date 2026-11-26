@@ -3,10 +3,10 @@
 // 2. Shows the nav links inline when they fit on one row, and folds them behind
 //    the Menu button when they don't. Without this script the menu stays folded,
 //    which still works.
-// 3. Product filters and the placeholder forms. There is no backend yet, so the
-//    forms only show a message on the page and send nothing.
+// 3. Filters the products page by category.
 // 4. Counts up the reliability figures on the home page.
 //
+// The site is static: there are no forms or accounts, and nothing is sent anywhere.
 // Scroll animations are pure CSS (see css/style.css) and need no script.
 
 if (!Object.hasOwn(HTMLElement.prototype, "popover")) {
@@ -158,16 +158,4 @@ if (counters.length && matchMedia("(prefers-reduced-motion: no-preference)").mat
   }, { threshold: 0.6 });
 
   for (const el of updaters.keys()) observer.observe(el);
-}
-
-// ---------- Placeholder forms (contact, launch alerts) ----------
-// PLACEHOLDER: replace with a real submit to the backend when it exists.
-
-for (const form of document.querySelectorAll("form[data-demo-form]")) {
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const status = form.querySelector("[data-form-status]");
-    if (status) status.textContent = form.dataset.success;
-    form.reset();
-  });
 }

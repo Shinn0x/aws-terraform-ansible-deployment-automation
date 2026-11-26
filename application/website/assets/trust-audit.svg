@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 150" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Trust doodle: a checklist with the Agex logo as its clip, under a magnifying glass. -->
+  <defs>
+    <filter id="rough" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="91" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rough-soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="100" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
+      <path d="M0 0V7" stroke="#1a1a1a" stroke-width="1.3" opacity=".5"/>
+    </pattern>
+  </defs>
+  <g filter="url(#rough)"><path d="M48 26H132V136H48Z" fill="#ffb08a" transform="translate(-7 7)"/><path d="M48 26H132V136H48Z" fill="#fff" stroke="#1a1a1a" stroke-width="3.5"/><path d="m60 58l5 5 9-10" stroke="#ff5f1f" stroke-width="3.5"/><path d="M84 59H118" stroke="#1a1a1a" stroke-width="3"/><path d="m60 82l5 5 9-10" stroke="#ff5f1f" stroke-width="3.5"/><path d="M84 83H112" stroke="#1a1a1a" stroke-width="3"/><path d="m60 106l5 5 9-10" stroke="#ff5f1f" stroke-width="3.5"/><path d="M84 107H104" stroke="#1a1a1a" stroke-width="3"/><g transform="translate(75 11) scale(0.938)"><rect width="32" height="32" rx="8" fill="#1a1a1a"/><path d="M10 23 16 9l6 14" stroke="#fff" stroke-width="3"/><path d="M12.4 18h7.2" stroke="#ff5f1f" stroke-width="3"/></g></g>
+  <g filter="url(#rough)"><path d="m152 118 22 22" stroke="#1a1a1a" stroke-width="9"/><circle cx="138" cy="104" r="23" fill="#fff" fill-opacity=".75" stroke="#1a1a1a" stroke-width="3.5"/><path d="M124 98a15 15 0 0 1 9-9" stroke="#1a1a1a" stroke-width="2.5"/></g>
+  <g filter="url(#rough)"><path d="M28 33V47M21 40H35M25.1 37.1L30.9 42.9M30.9 37.1L25.1 42.9" stroke="#ff5f1f" stroke-width="2.5"/><path d="M172 30V42M166 36H178M169.5 33.5L174.5 38.5M174.5 33.5L169.5 38.5" stroke="#1a1a1a" stroke-width="2.5"/></g>
+</svg>
