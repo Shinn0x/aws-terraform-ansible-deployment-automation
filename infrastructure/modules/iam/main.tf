@@ -24,7 +24,7 @@ resource "aws_iam_role" "ec2" {
   assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
 }
 
-# Attach the AWS managed policy for Systems Manager (Session Manager, Run Command)
+# Attach the AWS managed policy for Systems Manager
 resource "aws_iam_role_policy_attachment" "ssm" {
   role       = aws_iam_role.ec2.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"

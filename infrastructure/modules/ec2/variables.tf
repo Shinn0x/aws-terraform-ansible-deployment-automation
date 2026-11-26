@@ -1,10 +1,10 @@
-# Name tag of the instance, e.g. aws-terraform-ansible-deployment-automation-dev-web
+# Name tag of the instance
 variable "name" {
   description = "Name of the EC2 instance"
   type        = string
 }
 
-# Instance size. Must be x86_64 (t3, t3a, ...) because the AMI is x86_64. t3.micro is Free Tier eligible.
+# Instance size. Must be x86_64 to match the AMI
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string

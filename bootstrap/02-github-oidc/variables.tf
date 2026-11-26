@@ -5,7 +5,7 @@ variable "aws_region" {
   default     = "ap-southeast-1"
 }
 
-# Account ID has no default so it is never committed. It comes from .env.
+# AWS account ID, set in .env (no default)
 variable "aws_account_id" {
   description = "AWS account this configuration may run against. Set TF_VAR_aws_account_id in .env."
   type        = string
@@ -23,8 +23,7 @@ variable "environment" {
   default     = "dev"
 }
 
-# The GitHub repository and branch that may assume the role.
-# The numeric IDs have no defaults so they are never committed. They come from .env.
+# GitHub repository and branch allowed to assume the role. The IDs are set in .env (no default)
 variable "github_owner" {
   description = "GitHub repository owner"
   type        = string

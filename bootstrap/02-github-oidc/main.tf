@@ -12,7 +12,7 @@ resource "aws_iam_openid_connect_provider" "github" {
   ]
 }
 
-# GitHub's immutable subject format (default for repos created after 2026-07-15):
+# GitHub's immutable subject format:
 # repo:OWNER@OWNER_ID/REPO@REPO_ID:ref:refs/heads/BRANCH
 locals {
   github_oidc_subject = "repo:${var.github_owner}@${var.github_owner_id}/${var.github_repo}@${var.github_repo_id}:ref:refs/heads/${var.github_branch}"
@@ -67,7 +67,7 @@ resource "aws_iam_policy" "github_actions" {
   # Changing the description would force Terraform to replace the policy
   description = "Permissions for GitHub Actions Terraform state access"
 
-  # The account ID comes from .env, so it is never written into the repository
+  # Account ID comes from .env, so it is never committed
   policy = templatefile("${path.module}/github-actions-policy.json", {
     state_bucket_name = var.state_bucket_name
     aws_region        = var.aws_region
@@ -81,7 +81,7 @@ resource "aws_iam_role_policy_attachment" "github_actions" {
   policy_arn = aws_iam_policy.github_actions.arn
 }
 
-# Second policy for the Ansible bucket and SSM sessions, because the first one is almost full
+# Ansible bucket and SSM sessions. Separate because the first policy is near the size limit
 resource "aws_iam_policy" "github_actions_ansible" {
   name        = "github-actions-ansible-policy"
   description = "Permissions for GitHub Actions to run Ansible over SSM"
