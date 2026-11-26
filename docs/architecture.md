@@ -96,7 +96,7 @@ flowchart LR
 - `iam`: the EC2 role with `AmazonSSMManagedInstanceCore`, and its instance profile
 - `ec2`: the Amazon Linux 2023 web server (IMDSv2, encrypted disk, no SSH key)
 
-`infrastructure/environments/dev/` and `prod/` are the only places Terraform runs. Each one holds the `terraform` block with the S3 backend, the AWS provider with `default_tags`, and the locals, and calls all four modules. dev uses `10.20.0.0/16`, prod uses `10.30.0.0/16`. GitHub Actions applies dev on `main`; prod is applied locally.
+`infrastructure/environments/dev/` and `prod/` are the only places Terraform runs. Each one holds the `terraform` block with the S3 backend, the AWS provider with `default_tags`, and the locals, and calls all four modules. dev uses `10.20.0.0/16`, prod uses `10.30.0.0/16`. GitHub Actions applies dev on every push to `main`, and prod only on a manual run.
 
 ## Configuration and Deployment (Planned)
 

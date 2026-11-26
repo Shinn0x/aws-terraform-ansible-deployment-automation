@@ -18,6 +18,14 @@ on:
       - ".github/workflows/terraform.yaml"
 
   workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy
+        type: choice
+        options:
+          - dev
+          - prod
+        default: dev
 
 permissions:
   contents: read
@@ -29,7 +37,7 @@ env:
   TF_INPUT: "false"
 
 jobs:
-  # Runs on every event. Needs no AWS access.
+  # No AWS access needed
   validate:
     name: Validate
     runs-on: ubuntu-latest
@@ -46,29 +54,18 @@ jobs:
       - name: Terraform format check
         run: terraform fmt -check -recursive
 
-      - name: Validate OIDC bootstrap
-        working-directory: bootstrap/02-github-oidc
+      - name: Terraform validate
         run: |
-          terraform init -backend=false
-          terraform validate
+          for dir in bootstrap/02-github-oidc infrastructure/environments/dev infrastructure/environments/prod; do
+            echo "::group::$dir"
+            terraform -chdir="$dir" init -backend=false
+            terraform -chdir="$dir" validate
+            echo "::endgroup::"
+          done
 
-      # Also validates the modules
-      - name: Validate dev environment
-        working-directory: infrastructure/environments/dev
-        run: |
-          terraform init -backend=false
-          terraform validate
-
-      - name: Validate prod environment
-        working-directory: infrastructure/environments/prod
-        run: |
-          terraform init -backend=false
-          terraform validate
-
-  # Plans and applies dev. Only on main: the IAM role trusts the main
-  # branch only, so pull requests and other branches would be denied.
+  # Push to main deploys dev. A manual run on main can deploy dev or prod.
   deploy:
-    name: Plan and apply dev
+    name: Plan and apply ${{ inputs.environment || 'dev' }}
     needs: validate
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -77,9 +74,8 @@ jobs:
       contents: read
       id-token: write
 
-    # Queue applies one after another instead of running them in parallel
     concurrency:
-      group: terraform-apply-dev
+      group: terraform-apply-${{ inputs.environment || 'dev' }}
       cancel-in-progress: false
 
     env:
@@ -87,7 +83,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: infrastructure/environments/dev
+        working-directory: infrastructure/environments/${{ inputs.environment || 'dev' }}
 
     steps:
       - name: Checkout repository
@@ -129,9 +125,7 @@ jobs:
           esac
 
       - name: Verify state bucket access
-        run: |
-          aws s3 ls "s3://shinn-terraform-state-foundation" > /dev/null
-          echo "State bucket is reachable with the role's permissions."
+        run: aws s3 ls "s3://shinn-terraform-state-foundation" > /dev/null
 
       - name: Terraform init
         run: terraform init
@@ -139,6 +133,6 @@ jobs:
       - name: Terraform plan
         run: terraform plan -out=tfplan
 
-      # Applies exactly the plan above, not a fresh one
+      # Apply the saved plan
       - name: Terraform apply
         run: terraform apply tfplan

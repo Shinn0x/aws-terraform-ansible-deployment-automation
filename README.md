@@ -254,15 +254,19 @@ Only workflows running on `main` match this subject.
 |---|---|---|
 | Pull request to `main` | Run | Skipped |
 | Push to `main`, including a merged PR | Run | Run |
-| Manual run on `main` | Run | Run |
+| Manual run on `main` | Run | Run, for the environment you pick (dev or prod) |
 | Manual run on another branch | Run | Skipped |
 
 - **`validate`:** `terraform fmt -check` across the repository, plus `init -backend=false` and `validate` for `bootstrap/02-github-oidc`, `infrastructure/environments/dev` and `infrastructure/environments/prod`. Validating an environment also validates every module it uses. It needs no AWS access.
-- **`deploy`:** runs after `validate` passes. It assumes the IAM role through OIDC, checks that the identity is `github-actions-terraform-role` in the account from the `AWS_ACCOUNT_ID` secret, and checks that the role can list the state bucket. Then it runs `terraform plan -out=tfplan` and `terraform apply tfplan` in `infrastructure/environments/dev`. Applies are queued, never run in parallel.
+- **`deploy`:** runs after `validate` passes. It assumes the IAM role through OIDC, checks that the identity is `github-actions-terraform-role` in the account from the `AWS_ACCOUNT_ID` secret, and checks that the role can list the state bucket. Then it runs `terraform plan -out=tfplan` and `terraform apply tfplan` in `infrastructure/environments/<environment>`. Applies to the same environment are queued, never run in parallel.
 
 `deploy` is skipped on pull requests and other branches because those runs send a different OIDC subject, which the trust policy does not allow.
 
-CI applies **dev only**. prod is validated but applied from your machine (see Section 03).
+A push to `main` deploys **dev**. To deploy prod, run the workflow by hand and pick `prod`:
+
+```bash
+gh workflow run terraform.yaml --ref main -f environment=prod
+```
 
 **Merging to `main` applies dev to AWS.** Review the plan in the PR description, or run `terraform plan` locally, before merging.
 
@@ -320,7 +324,7 @@ Each environment calls all four modules. The settings that differ:
 | VPC CIDR | `10.20.0.0/16` | `10.30.0.0/16` |
 | Public subnet | `10.20.1.0/24` | `10.30.1.0/24` |
 | Instance type | `t3.micro` | `t3.micro` |
-| Applied by | GitHub Actions on `main`, or locally | Locally only |
+| Applied by | GitHub Actions on push to `main`, a manual run, or locally | A manual run of the workflow, or locally |
 
 Both states use the S3 native lock file (`use_lockfile = true`, Terraform 1.10 or later). Resource names start with `<project_name>-<environment>`, for example `aws-terraform-ansible-deployment-automation-dev-vpc`. The environment name is fixed in each folder's `locals.tf`, so the dev folder can't create prod resources by mistake.
 
