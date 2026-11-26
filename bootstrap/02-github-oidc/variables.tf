@@ -5,6 +5,16 @@ variable "aws_region" {
   default     = "ap-southeast-1"
 }
 
+variable "aws_account_id" {
+  description = "AWS account this configuration may run against. Set TF_VAR_aws_account_id in .env."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]{12}$", var.aws_account_id))
+    error_message = "aws_account_id must be a 12-digit AWS account ID (aws sts get-caller-identity --query Account --output text)."
+  }
+}
+
 variable "environment" {
   description = "Deployment environment"
   type        = string
@@ -18,9 +28,8 @@ variable "github_owner" {
 }
 
 variable "github_owner_id" {
-  description = "Immutable GitHub owner ID"
+  description = "Immutable GitHub owner ID. Set TF_VAR_github_owner_id in .env."
   type        = string
-  default     = "REDACTED_GITHUB_OWNER_ID"
 
   validation {
     condition     = can(regex("^[0-9]+$", var.github_owner_id))
@@ -35,9 +44,8 @@ variable "github_repo" {
 }
 
 variable "github_repo_id" {
-  description = "Immutable GitHub repository ID"
+  description = "Immutable GitHub repository ID. Set TF_VAR_github_repo_id in .env."
   type        = string
-  default     = "REDACTED_GITHUB_REPO_ID"
 
   validation {
     condition     = can(regex("^[0-9]+$", var.github_repo_id))
