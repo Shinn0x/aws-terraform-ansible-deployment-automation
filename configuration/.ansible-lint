@@ -1,0 +1,4 @@
+---
+# The playbook needs target_env. Give lint a value so syntax-check passes.
+extra_vars:
+  target_env: dev

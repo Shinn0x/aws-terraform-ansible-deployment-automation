@@ -3,16 +3,15 @@ server {
     listen 80;
     listen [::]:80;
     server_name {{ webserver_server_name }};
-
-    root {{ webserver_root }};
-    index index.html;
-
-    # Don't show the nginx version
     server_tokens off;
 
-    location / {
-        try_files $uri $uri/ =404;
+    # Let's Encrypt checks this path to prove you own the domain
+    location /.well-known/acme-challenge/ {
+        root {{ webserver_acme_root }};
     }
 
-    error_page 404 /404.html;
+    # Send everything else to HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
