@@ -10,7 +10,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "${local.name_prefix}-vpc"
+    Name = "${var.name}-vpc"
   }
 }
 
@@ -22,7 +22,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "${local.name_prefix}-public-subnet"
+    Name = "${var.name}-public-subnet"
   }
 }
 
@@ -31,7 +31,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "${local.name_prefix}-igw"
+    Name = "${var.name}-igw"
   }
 }
 
@@ -40,7 +40,7 @@ resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "${local.name_prefix}-public-rt"
+    Name = "${var.name}-public-rt"
   }
 }
 

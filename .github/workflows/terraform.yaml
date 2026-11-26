@@ -52,16 +52,23 @@ jobs:
           terraform init -backend=false
           terraform validate
 
-      - name: Validate VPC
-        working-directory: infrastructure/modules/vpc
+      # Also validates the modules
+      - name: Validate dev environment
+        working-directory: infrastructure/environments/dev
         run: |
           terraform init -backend=false
           terraform validate
 
-  # Plans and applies the VPC. Only on main: the IAM role trusts the main
+      - name: Validate prod environment
+        working-directory: infrastructure/environments/prod
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+  # Plans and applies dev. Only on main: the IAM role trusts the main
   # branch only, so pull requests and other branches would be denied.
   deploy:
-    name: Plan and apply VPC
+    name: Plan and apply dev
     needs: validate
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -72,7 +79,7 @@ jobs:
 
     # Queue applies one after another instead of running them in parallel
     concurrency:
-      group: terraform-apply-vpc
+      group: terraform-apply-dev
       cancel-in-progress: false
 
     env:
@@ -80,7 +87,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: infrastructure/modules/vpc
+        working-directory: infrastructure/environments/dev
 
     steps:
       - name: Checkout repository

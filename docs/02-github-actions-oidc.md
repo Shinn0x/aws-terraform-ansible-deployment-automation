@@ -538,6 +538,6 @@ The role's trust policy now allows only the `main` branch of this repository.
 
 ## Next Stage
 
-Section 03 uses the S3 bucket from Section 01 as the remote backend for the VPC (`vpc/terraform.tfstate`).
+Section 03 uses the S3 bucket from Section 01 as the remote backend for the dev and prod environments (`environments/dev/terraform.tfstate` and `environments/prod/terraform.tfstate`).
 
 The OIDC bootstrap state can later be migrated from local storage to S3 in the same way.

@@ -49,14 +49,20 @@ See [Architecture](docs/architecture.md) for how the components fit together.
 │       ├── github-actions-policy.json
 │       └── check-github-oidc.sh
 ├── infrastructure/
-│   └── modules/
-│       └── vpc/
-│           ├── backend.tf
-│           ├── providers.tf
-│           ├── locals.tf
-│           ├── variables.tf
-│           ├── main.tf
-│           └── outputs.tf
+│   ├── modules/                  # reusable modules, no provider or backend
+│   │   ├── vpc/
+│   │   ├── security-group/
+│   │   ├── iam/
+│   │   └── ec2/
+│   └── environments/             # Terraform runs here only
+│       ├── dev/
+│       │   ├── backend.tf        # terraform block and S3 backend
+│       │   ├── providers.tf      # AWS provider and default tags
+│       │   ├── locals.tf         # environment name, tags, name prefix
+│       │   ├── variables.tf
+│       │   ├── main.tf           # calls the four modules
+│       │   └── outputs.tf
+│       └── prod/                 # same files, prod values
 ├── configuration/
 ├── application/
 ├── scripts/
@@ -86,7 +92,7 @@ set -a && source .env && set +a
 
 | Variable | Used by | Purpose |
 |---|---|---|
-| `TF_VAR_aws_account_id` | `bootstrap/02-github-oidc`, `infrastructure/modules/vpc` | Terraform refuses to run against any other account (`allowed_account_ids`) |
+| `TF_VAR_aws_account_id` | `bootstrap/02-github-oidc`, `infrastructure/environments/dev`, `infrastructure/environments/prod` | Terraform refuses to run against any other account (`allowed_account_ids`) |
 | `TF_VAR_github_owner_id` | `bootstrap/02-github-oidc` | Immutable owner ID in the OIDC trust policy |
 | `TF_VAR_github_repo_id` | `bootstrap/02-github-oidc` | Immutable repository ID in the OIDC trust policy |
 
@@ -251,12 +257,14 @@ Only workflows running on `main` match this subject.
 | Manual run on `main` | Run | Run |
 | Manual run on another branch | Run | Skipped |
 
-- **`validate`:** `terraform fmt -check` across the repository, plus `init -backend=false` and `validate` for `bootstrap/02-github-oidc` and `infrastructure/modules/vpc`. It needs no AWS access.
-- **`deploy`:** runs after `validate` passes. It assumes the IAM role through OIDC, checks that the identity is `github-actions-terraform-role` in the account from the `AWS_ACCOUNT_ID` secret, and checks that the role can list the state bucket. Then it runs `terraform plan -out=tfplan` and `terraform apply tfplan` for the VPC. Applies are queued, never run in parallel.
+- **`validate`:** `terraform fmt -check` across the repository, plus `init -backend=false` and `validate` for `bootstrap/02-github-oidc`, `infrastructure/environments/dev` and `infrastructure/environments/prod`. Validating an environment also validates every module it uses. It needs no AWS access.
+- **`deploy`:** runs after `validate` passes. It assumes the IAM role through OIDC, checks that the identity is `github-actions-terraform-role` in the account from the `AWS_ACCOUNT_ID` secret, and checks that the role can list the state bucket. Then it runs `terraform plan -out=tfplan` and `terraform apply tfplan` in `infrastructure/environments/dev`. Applies are queued, never run in parallel.
 
 `deploy` is skipped on pull requests and other branches because those runs send a different OIDC subject, which the trust policy does not allow.
 
-**Merging to `main` applies the VPC to AWS.** Review the plan in the PR description, or run `terraform plan` locally, before merging.
+CI applies **dev only**. prod is validated but applied from your machine (see Section 03).
+
+**Merging to `main` applies dev to AWS.** Review the plan in the PR description, or run `terraform plan` locally, before merging.
 
 ### Repository Secrets
 
@@ -290,43 +298,56 @@ Detailed documentation:
 
 Terraform provisions the AWS infrastructure required for the website deployment.
 
-### VPC
+### Modules and Environments
 
-`infrastructure/modules/vpc/` is a Terraform root configuration with its own S3 backend:
+The code is split in two:
 
-| Setting | Value |
-|---|---|
-| State | `s3://shinn-terraform-state-foundation/vpc/terraform.tfstate` |
-| State locking | S3 native lock file (`use_lockfile = true`, Terraform 1.10 or later) |
-| VPC CIDR | `10.20.0.0/16`, DNS support and DNS hostnames enabled |
-| Public subnet | `10.20.1.0/24` in the first available zone, public IPs on launch |
-| Internet access | Internet gateway with a `0.0.0.0/0` route in the public route table |
+- **`infrastructure/modules/`** holds reusable modules. A module has only resources, variables and outputs: no `terraform` block, no provider, no backend and no locals.
+- **`infrastructure/environments/dev/`** and **`prod/`** are the only places Terraform runs. Each one has the `terraform` block with the S3 backend, the AWS provider, the locals, and a `main.tf` that calls the modules.
 
-Resource names start with `<project_name>-<environment>`, for example `aws-terraform-ansible-deployment-automation-dev-vpc`.
+| Module | Creates | Docs |
+|---|---|---|
+| `vpc` | VPC, public subnet, internet gateway, route table | [README](infrastructure/modules/vpc/README.md) |
+| `security-group` | Web server security group: HTTP and HTTPS in, HTTP and HTTPS out | [README](infrastructure/modules/security-group/README.md) |
+| `iam` | EC2 role with `AmazonSSMManagedInstanceCore`, and its instance profile | [README](infrastructure/modules/iam/README.md) |
+| `ec2` | Amazon Linux 2023 web server: IMDSv2, encrypted disk, no SSH key | [README](infrastructure/modules/ec2/README.md) |
 
-GitHub Actions applies this configuration when changes reach `main`. To run it locally:
+Each environment calls all four modules. The settings that differ:
+
+| Setting | dev | prod |
+|---|---|---|
+| State | `s3://shinn-terraform-state-foundation/environments/dev/terraform.tfstate` | `.../environments/prod/terraform.tfstate` |
+| VPC CIDR | `10.20.0.0/16` | `10.30.0.0/16` |
+| Public subnet | `10.20.1.0/24` | `10.30.1.0/24` |
+| Instance type | `t3.micro` | `t3.micro` |
+| Applied by | GitHub Actions on `main`, or locally | Locally only |
+
+Both states use the S3 native lock file (`use_lockfile = true`, Terraform 1.10 or later). Resource names start with `<project_name>-<environment>`, for example `aws-terraform-ansible-deployment-automation-dev-vpc`. The environment name is fixed in each folder's `locals.tf`, so the dev folder can't create prod resources by mistake.
+
+### Run an Environment Locally
 
 ```bash
 set -a && source .env && set +a
 
-cd infrastructure/modules/vpc
+cd infrastructure/environments/dev    # or prod
 terraform init
 terraform plan
+terraform apply
 ```
 
-Outputs: `vpc_id`, `public_subnet_id`, `public_subnet_availability_zone`, `internet_gateway_id` and `public_route_table_id`.
+Outputs: `vpc_id`, `public_subnet_id`, `security_group_id`, `instance_id`, `public_ip` and `website_url`.
 
-#### Destroy the VPC
+### Destroy an Environment
 
 Destroy runs from your machine. The workflow has no destroy step.
 
 ```bash
 set -a && source .env && set +a
 
-cd infrastructure/modules/vpc
+cd infrastructure/environments/dev    # or prod
 terraform init
 
-# Save a destroy plan, check it lists only the 6 VPC resources, then apply it
+# Save a destroy plan, check it lists only this environment's resources, then apply it
 terraform plan -destroy -out=destroy.tfplan
 terraform apply destroy.tfplan
 rm destroy.tfplan
@@ -334,18 +355,16 @@ rm destroy.tfplan
 
 The state file stays in S3 with no resources, so the next apply starts fresh.
 
-**The VPC comes back on the next deploy.** Any push to `main` that changes `infrastructure/`, `bootstrap/02-github-oidc/` or the workflow file runs the `deploy` job, and so does a manual run on `main`. Comment-only changes count too. To keep the VPC down, disable the workflow before merging, and enable it again when you want the VPC back:
+**dev comes back on the next deploy.** Any push to `main` that changes `infrastructure/`, `bootstrap/02-github-oidc/` or the workflow file runs the `deploy` job, and so does a manual run on `main`. Comment-only changes count too. To keep dev down, disable the workflow before merging, and enable it again when you want dev back:
 
 ```bash
 gh workflow disable terraform.yaml
 gh workflow enable terraform.yaml
 ```
 
-### Planned
+### CI Permissions
 
-- EC2 instance
-- IAM roles and instance permissions
-- Security groups
+The GitHub Actions role can only manage the VPC so far (`VpcRead` and `VpcManage` in `github-actions-policy.json`). Until it also gets permissions for security groups, IAM roles and instance profiles, EC2 instances, and reading the AMI parameter from SSM, the `deploy` job stops at `terraform plan` with `AccessDenied`. Nothing is created in that case.
 
 ## Section 04 — Configuration and Deployment
 
@@ -387,7 +406,10 @@ The final stage will run automated health checks to confirm that the website is 
 - [x] VPC configuration with S3 remote state
 - [x] CI plans and applies the VPC on `main`
 - [x] VPC applied by CI and verified (6 resources), then destroyed locally with `terraform destroy`
-- [ ] Provision EC2, security groups and instance IAM
+- [x] Security group, IAM and EC2 modules created
+- [x] Modules split from environments: `infrastructure/environments/dev` and `prod` call all four modules
+- [ ] CI role permissions for security groups, IAM and EC2
+- [ ] dev environment applied and verified
 - [ ] Automate deployment with Ansible
 - [ ] Add deployment health checks
 
