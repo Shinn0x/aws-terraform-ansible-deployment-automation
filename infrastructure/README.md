@@ -9,7 +9,8 @@ infrastructure/
 │   ├── security-group/
 │   ├── iam/
 │   ├── ec2/
-│   └── s3/
+│   ├── s3/
+│   └── route53/
 └── environments/     Terraform runs here only
     ├── dev/
     └── prod/
@@ -24,6 +25,7 @@ infrastructure/
 | [`iam`](modules/iam/README.md) | EC2 role with `AmazonSSMManagedInstanceCore`, and its instance profile |
 | [`ec2`](modules/ec2/README.md) | Amazon Linux 2023 web server with an Elastic IP: IMDSv2, encrypted disk, no SSH key |
 | [`s3`](modules/s3/README.md) | Private bucket Ansible uses to copy files to the instance over SSM |
+| [`route53`](modules/route53/README.md) | `A` record that points the website name to the Elastic IP |
 
 Modules have no `terraform` block, provider, backend or locals. The environment sets those.
 
@@ -37,7 +39,7 @@ Each environment has the same files:
 | `providers.tf` | AWS provider, `allowed_account_ids` and `default_tags` |
 | `locals.tf` | Environment name, tags, name prefix |
 | `variables.tf` | Settings for this environment |
-| `main.tf` | Calls the five modules and creates the Route 53 record |
+| `main.tf` | Calls the six modules |
 | `outputs.tf` | `vpc_id`, `public_subnet_id`, `security_group_id`, `instance_id`, `public_ip`, `website_url`, `ansible_bucket_name` |
 
 | Setting | dev | prod |
@@ -66,7 +68,9 @@ terraform apply
 
 ## Destroy
 
-The workflow has no destroy step. Run it from your machine:
+Use the workflow: run **Deploy** manually with `action` set to `destroy` and the environment name in `confirm`. See [the workflows README](../.github/workflows/README.md#destroy).
+
+Or run it from your machine:
 
 ```bash
 set -a && source .env && set +a
