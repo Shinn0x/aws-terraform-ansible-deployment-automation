@@ -316,6 +316,31 @@ terraform plan
 
 Outputs: `vpc_id`, `public_subnet_id`, `public_subnet_availability_zone`, `internet_gateway_id` and `public_route_table_id`.
 
+#### Destroy the VPC
+
+Destroy runs from your machine. The workflow has no destroy step.
+
+```bash
+set -a && source .env && set +a
+
+cd infrastructure/modules/vpc
+terraform init
+
+# Save a destroy plan, check it lists only the 6 VPC resources, then apply it
+terraform plan -destroy -out=destroy.tfplan
+terraform apply destroy.tfplan
+rm destroy.tfplan
+```
+
+The state file stays in S3 with no resources, so the next apply starts fresh.
+
+**The VPC comes back on the next deploy.** Any push to `main` that changes `infrastructure/`, `bootstrap/02-github-oidc/` or the workflow file runs the `deploy` job, and so does a manual run on `main`. Comment-only changes count too. To keep the VPC down, disable the workflow before merging, and enable it again when you want the VPC back:
+
+```bash
+gh workflow disable terraform.yaml
+gh workflow enable terraform.yaml
+```
+
 ### Planned
 
 - EC2 instance
@@ -337,6 +362,7 @@ The final stage will run automated health checks to confirm that the website is 
 - Use IAM roles and temporary credentials where possible.
 - Restrict GitHub OIDC trust to the intended repository and branch, using immutable owner and repository IDs.
 - Only assume the AWS role from `main` in CI. Pull request runs check and validate Terraform without AWS access.
+- Protect `main` with a repository ruleset: changes go through pull requests, and the branch can't be deleted.
 - Block public access to the Terraform state bucket.
 - Enable S3 versioning to support state recovery.
 - Do not commit AWS credentials, Terraform state files, or sensitive variables.
@@ -360,7 +386,7 @@ The final stage will run automated health checks to confirm that the website is 
 - [x] Account ID and GitHub IDs moved out of the repository into `.env` and repository secrets
 - [x] VPC configuration with S3 remote state
 - [x] CI plans and applies the VPC on `main`
-- [ ] VPC applied and verified
+- [x] VPC applied by CI and verified (6 resources), then destroyed locally with `terraform destroy`
 - [ ] Provision EC2, security groups and instance IAM
 - [ ] Automate deployment with Ansible
 - [ ] Add deployment health checks

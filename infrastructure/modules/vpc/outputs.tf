@@ -1,3 +1,4 @@
+# IDs printed after apply. The EC2 and security group code will need them later.
 output "vpc_id" {
   description = "ID of the created VPC"
   value       = aws_vpc.main.id

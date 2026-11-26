@@ -1,9 +1,12 @@
+# AWS region where the VPC is created
 variable "aws_region" {
   description = "AWS region for the VPC"
   type        = string
   default     = "ap-southeast-1"
 }
 
+# Account ID has no default so it is never committed.
+# Locally it comes from .env, in GitHub Actions from the AWS_ACCOUNT_ID secret.
 variable "aws_account_id" {
   description = "AWS account this configuration may run against. Set TF_VAR_aws_account_id in .env, or the AWS_ACCOUNT_ID secret in CI."
   type        = string
@@ -14,6 +17,7 @@ variable "aws_account_id" {
   }
 }
 
+# Project name and environment, used for tags and resource names
 variable "project_name" {
   description = "Project name used for resource tags"
   type        = string
@@ -26,6 +30,7 @@ variable "environment" {
   default     = "dev"
 }
 
+# IP address ranges for the VPC and its public subnet
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string
