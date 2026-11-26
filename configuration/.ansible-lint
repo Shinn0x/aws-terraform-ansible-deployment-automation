@@ -1,0 +1,4 @@
+---
+# The playbook needs target_env for syntax-check
+extra_vars:
+  target_env: dev

@@ -1,0 +1,20 @@
+# Managed by Ansible
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name {{ webserver_server_name }};
+    server_tokens off;
+
+    ssl_certificate     {{ webserver_cert_dir }}/fullchain.pem;
+    ssl_certificate_key {{ webserver_cert_dir }}/privkey.pem;
+
+    root {{ webserver_root }};
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    error_page 404 /404.html;
+}

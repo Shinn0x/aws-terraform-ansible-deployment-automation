@@ -1,4 +1,4 @@
-# Name of the security group, e.g. aws-terraform-ansible-deployment-automation-dev-web
+# Name of the security group
 variable "name" {
   description = "Name of the security group"
   type        = string

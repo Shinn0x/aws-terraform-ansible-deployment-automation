@@ -1,0 +1,15 @@
+---
+# Folder nginx serves the website from
+webserver_root: /var/www/agex
+
+# Website files in this repo. The trailing / copies only the contents
+webserver_src: "{{ playbook_dir }}/../../application/website/"
+
+# Domain nginx answers for. Set per environment in group_vars.
+webserver_server_name: localhost
+
+# Folder Let's Encrypt reads to check you own the domain
+webserver_acme_root: /var/www/letsencrypt
+
+# Where certbot saves the certificate
+webserver_cert_dir: "/etc/letsencrypt/live/{{ webserver_server_name }}"

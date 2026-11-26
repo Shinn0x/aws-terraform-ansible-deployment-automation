@@ -1,0 +1,76 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "infrastructure/**"
+      - "bootstrap/02-github-oidc/**"
+      - "configuration/**"
+      - "application/**"
+      - "scripts/**"
+      - ".github/workflows/**"
+      # README changes don't deploy
+      - "!**.md"
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "infrastructure/**"
+      - "bootstrap/02-github-oidc/**"
+      - "configuration/**"
+      - "application/**"
+      - "scripts/**"
+      - ".github/workflows/**"
+      - "!**.md"
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to deploy
+        type: choice
+        options:
+          - dev
+          - prod
+        default: dev
+
+permissions:
+  contents: read
+
+jobs:
+  # Runs on every event. No AWS access needed.
+  validate:
+    name: Validate
+    uses: ./.github/workflows/_validate.yaml
+
+  # Only on main, the only branch the IAM role trusts.
+  # Push deploys dev. A manual run deploys dev or prod.
+  terraform:
+    name: Terraform
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/_terraform.yaml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      environment: ${{ inputs.environment || 'dev' }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+  ansible:
+    name: Ansible
+    needs: terraform
+    uses: ./.github/workflows/_ansible.yaml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      environment: ${{ inputs.environment || 'dev' }}
+      website_url: ${{ needs.terraform.outputs.website_url }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}

@@ -1,0 +1,75 @@
+---
+- name: Install nginx and certbot
+  ansible.builtin.dnf:
+    name:
+      - nginx
+      - certbot
+    state: present
+
+- name: Create the website folder
+  ansible.builtin.file:
+    path: "{{ webserver_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create the Let's Encrypt folder
+  ansible.builtin.file:
+    path: "{{ webserver_acme_root }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copy the website
+  ansible.builtin.copy:
+    src: "{{ webserver_src }}"
+    dest: "{{ webserver_root }}/"
+    owner: root
+    group: root
+    mode: "0644"
+    directory_mode: "0755"
+
+- name: Add the nginx site config
+  ansible.builtin.template:
+    src: agex.conf.j2
+    dest: /etc/nginx/conf.d/agex.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload nginx
+
+- name: Start nginx and enable it at boot
+  ansible.builtin.systemd_service:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Apply the config before asking for the certificate
+  ansible.builtin.meta: flush_handlers
+
+- name: Get the certificate from Let's Encrypt
+  ansible.builtin.command:
+    cmd: >-
+      certbot certonly --webroot
+      -w {{ webserver_acme_root }}
+      -d {{ webserver_server_name }}
+      --non-interactive --agree-tos --register-unsafely-without-email
+      --deploy-hook "systemctl reload nginx"
+    creates: "{{ webserver_cert_dir }}/fullchain.pem"
+
+- name: Add the HTTPS config
+  ansible.builtin.template:
+    src: agex-ssl.conf.j2
+    dest: /etc/nginx/conf.d/agex-ssl.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload nginx
+
+- name: Turn on automatic renewal
+  ansible.builtin.systemd_service:
+    name: certbot-renew.timer
+    state: started
+    enabled: true

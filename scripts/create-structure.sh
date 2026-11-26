@@ -1,117 +1,119 @@
-
 #!/usr/bin/env bash
+# Create the project folders and empty files. Existing files are not changed.
 set -euo pipefail
 
-ROOT="$(git rev-parse --show-toplevel)"
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  echo "Error: run this script inside the Git repository." >&2
+  exit 1
+}
 cd "$ROOT"
-
-if [[ ! -d "$ROOT/.git" ]]; then
-    echo "Error: Run this script from the Git repository root."
-    exit 1
-fi
 
 echo "Creating project structure..."
 
-# Section 01: S3 state bucket bootstrap
-mkdir -p bootstrap/01-state-bucket
+files=(
+  # Root
+  README.md
+  .gitignore
+  .env.example
 
-# Section 02: GitHub OIDC bootstrap
-mkdir -p bootstrap/02-github-oidc
+  # Section 01: S3 state bucket
+  bootstrap/README.md
+  bootstrap/01-state-bucket/README.md
+  bootstrap/01-state-bucket/create-state-bucket.sh
+  bootstrap/01-state-bucket/encryption.json
+  bootstrap/01-state-bucket/lifecycle.json
+  bootstrap/01-state-bucket/ownership-controls.json
+  bootstrap/01-state-bucket/public-access-block.json
 
-# Section 03: Terraform infrastructure
-mkdir -p infrastructure/modules/vpc
-mkdir -p infrastructure/modules/ec2
-mkdir -p infrastructure/modules/iam
-mkdir -p infrastructure/modules/security-group
-mkdir -p infrastructure/environments/dev
+  # Section 02: GitHub OIDC
+  bootstrap/02-github-oidc/README.md
+  bootstrap/02-github-oidc/providers.tf
+  bootstrap/02-github-oidc/variables.tf
+  bootstrap/02-github-oidc/main.tf
+  bootstrap/02-github-oidc/outputs.tf
+  bootstrap/02-github-oidc/github-actions-policy.json
+  bootstrap/02-github-oidc/github-actions-ansible-policy.json
+  bootstrap/02-github-oidc/check-github-oidc.sh
 
-# Section 04: Ansible configuration
-mkdir -p configuration/inventories
-mkdir -p configuration/playbooks
-mkdir -p configuration/roles/webserver/tasks
-mkdir -p configuration/roles/webserver/handlers
-mkdir -p configuration/roles/webserver/templates
-mkdir -p configuration/roles/webserver/defaults
+  # Section 03: Terraform infrastructure
+  infrastructure/README.md
+)
 
-# Static website
-mkdir -p application/website/css
-mkdir -p application/website/js
+for module in vpc security-group iam ec2 s3; do
+  files+=(
+    "infrastructure/modules/$module/README.md"
+    "infrastructure/modules/$module/main.tf"
+    "infrastructure/modules/$module/variables.tf"
+    "infrastructure/modules/$module/outputs.tf"
+  )
+done
+
+for env in dev prod; do
+  files+=(
+    "infrastructure/environments/$env/backend.tf"
+    "infrastructure/environments/$env/providers.tf"
+    "infrastructure/environments/$env/locals.tf"
+    "infrastructure/environments/$env/variables.tf"
+    "infrastructure/environments/$env/main.tf"
+    "infrastructure/environments/$env/outputs.tf"
+  )
+done
+
+files+=(
+  # Section 04: Ansible configuration
+  configuration/README.md
+  configuration/ansible.cfg
+  configuration/.ansible-lint
+  configuration/requirements.txt
+  configuration/requirements.yml
+  configuration/inventories/aws_ec2.yml
+  configuration/inventories/group_vars/all.yml
+  configuration/inventories/group_vars/env_dev.yml
+  configuration/inventories/group_vars/env_prod.yml
+  configuration/playbooks/deploy-website.yml
+  configuration/roles/webserver/defaults/main.yml
+  configuration/roles/webserver/handlers/main.yml
+  configuration/roles/webserver/tasks/main.yml
+  configuration/roles/webserver/templates/agex.conf.j2
+  configuration/roles/webserver/templates/agex-ssl.conf.j2
+
+  # Section 04: Static website
+  application/README.md
+  application/website/index.html
+  application/website/about.html
+  application/website/products.html
+  application/website/contact.html
+  application/website/privacy.html
+  application/website/terms.html
+  application/website/on-the-way.html
+  application/website/404.html
+  application/website/css/style.css
+  application/website/js/main.js
+
+  # Section 05: Scripts
+  scripts/README.md
+  scripts/create-structure.sh
+  scripts/health-check.sh
+  scripts/verify-aws-identity.sh
+
+  # GitHub Actions
+  .github/workflows/README.md
+  .github/workflows/deploy.yaml
+  .github/workflows/_validate.yaml
+  .github/workflows/_terraform.yaml
+  .github/workflows/_ansible.yaml
+)
+
 mkdir -p application/website/assets
 
-# Shared scripts and documentation
-mkdir -p scripts
-mkdir -p docs/decisions
+for file in "${files[@]}"; do
+  mkdir -p "$(dirname "$file")"
+  # touch only creates missing files, it never empties existing ones
+  touch "$file"
+  if [[ "$file" == *.sh ]]; then
+    chmod +x "$file"
+  fi
+done
 
-# GitHub Actions
-mkdir -p .github/workflows
-
-# Section 01 files
-touch bootstrap/01-state-bucket/create-state-bucket.sh
-touch bootstrap/01-state-bucket/README.md
-
-# Section 02 files
-touch bootstrap/02-github-oidc/main.tf
-touch bootstrap/02-github-oidc/variables.tf
-touch bootstrap/02-github-oidc/outputs.tf
-touch bootstrap/02-github-oidc/providers.tf
-touch bootstrap/02-github-oidc/terraform.tfvars.example
-touch bootstrap/02-github-oidc/README.md
-
-# Terraform infrastructure files
-touch infrastructure/modules/vpc/main.tf
-touch infrastructure/modules/vpc/variables.tf
-touch infrastructure/modules/vpc/outputs.tf
-
-touch infrastructure/modules/ec2/main.tf
-touch infrastructure/modules/ec2/variables.tf
-touch infrastructure/modules/ec2/outputs.tf
-
-touch infrastructure/modules/iam/main.tf
-touch infrastructure/modules/iam/variables.tf
-touch infrastructure/modules/iam/outputs.tf
-
-touch infrastructure/modules/security-group/main.tf
-touch infrastructure/modules/security-group/variables.tf
-touch infrastructure/modules/security-group/outputs.tf
-
-touch infrastructure/environments/dev/main.tf
-touch infrastructure/environments/dev/variables.tf
-touch infrastructure/environments/dev/outputs.tf
-touch infrastructure/environments/dev/providers.tf
-touch infrastructure/environments/dev/backend.tf
-touch infrastructure/environments/dev/terraform.tfvars.example
-
-# Ansible files
-touch configuration/ansible.cfg
-touch configuration/inventories/aws_ec2.yml
-touch configuration/playbooks/deploy-website.yml
-
-touch configuration/roles/webserver/tasks/main.yml
-touch configuration/roles/webserver/handlers/main.yml
-touch configuration/roles/webserver/defaults/main.yml
-
-# Website files
-touch application/website/index.html
-touch application/website/css/style.css
-touch application/website/js/main.js
-
-# Shared scripts
-touch scripts/validate.sh
-touch scripts/health-check.sh
-
-# GitHub Actions workflows
-touch .github/workflows/terraform.yml
-touch .github/workflows/deploy.yml
-touch .github/workflows/reusable-terraform-plan.yml
-touch .github/workflows/reusable-ansible-deploy.yml
-
-# Documentation
-touch docs/architecture.md
-
-# Root files
-touch .gitignore
-touch README.md
-
-echo "Project structure created successfully!"
+echo "Project structure created: ${#files[@]} files"
 echo "Repository root: $ROOT"
-
