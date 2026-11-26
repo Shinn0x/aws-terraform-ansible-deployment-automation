@@ -68,7 +68,9 @@ terraform apply
 
 ## Destroy
 
-The workflow has no destroy step. Run it from your machine:
+Use the workflow: run **Deploy** manually with `action` set to `destroy` and the environment name in `confirm`. See [the workflows README](../.github/workflows/README.md#destroy).
+
+Or run it from your machine:
 
 ```bash
 set -a && source .env && set +a

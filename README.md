@@ -71,6 +71,7 @@ You need the AWS CLI, Terraform 1.10 or newer, Python 3.13 or newer, and the Git
    ```bash
    gh workflow run deploy.yaml --ref main -f environment=prod
    ```
+5. **Destroy.** Run the workflow manually with `action` set to `destroy` and the environment name in `confirm`. See [Destroy](.github/workflows/README.md#destroy).
 
 ## Local Values (`.env`)
 

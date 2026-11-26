@@ -29,12 +29,23 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: Environment to deploy
+        description: Environment
         type: choice
         options:
           - dev
           - prod
         default: dev
+      action:
+        description: apply creates or updates. destroy deletes every resource.
+        type: choice
+        options:
+          - apply
+          - destroy
+        default: apply
+      confirm:
+        description: For destroy only, type the environment name again
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -46,7 +57,7 @@ jobs:
     uses: ./.github/workflows/_validate.yaml
 
   # Only on main, the only branch the IAM role trusts.
-  # Push deploys dev. A manual run deploys dev or prod.
+  # Push deploys dev. A manual run applies or destroys dev or prod.
   terraform:
     name: Terraform
     needs: validate
@@ -57,13 +68,17 @@ jobs:
       id-token: write
     with:
       environment: ${{ inputs.environment || 'dev' }}
+      action: ${{ inputs.action || 'apply' }}
+      confirm: ${{ inputs.confirm }}
     secrets:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
       AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
 
+  # Nothing to configure after a destroy
   ansible:
     name: Ansible
     needs: terraform
+    if: inputs.action != 'destroy'
     uses: ./.github/workflows/_ansible.yaml
     permissions:
       contents: read

@@ -7,6 +7,14 @@ on:
         description: Folder in infrastructure/environments to deploy
         type: string
         required: true
+      action:
+        description: apply or destroy
+        type: string
+        default: apply
+      confirm:
+        description: Must match the environment for a destroy
+        type: string
+        default: ""
     secrets:
       AWS_ROLE_ARN:
         required: true
@@ -29,7 +37,7 @@ env:
 
 jobs:
   apply:
-    name: Plan and apply ${{ inputs.environment }}
+    name: ${{ inputs.action == 'destroy' && 'Destroy' || 'Plan and apply' }} ${{ inputs.environment }}
     runs-on: ubuntu-latest
 
     # One apply per environment at a time
@@ -48,6 +56,19 @@ jobs:
       website_url: ${{ steps.tf_out.outputs.website_url }}
 
     steps:
+      # Stop a destroy unless the environment name was typed again
+      - name: Check destroy confirmation
+        if: inputs.action == 'destroy'
+        working-directory: .
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+          TARGET_ENV: ${{ inputs.environment }}
+        run: |
+          if [[ "$CONFIRM" != "$TARGET_ENV" ]]; then
+            echo "::error::Type '$TARGET_ENV' in the confirm box to destroy it."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -78,13 +99,15 @@ jobs:
       - name: Terraform init
         run: terraform init
 
+      # A destroy plan deletes every resource in the state
       - name: Terraform plan
-        run: terraform plan -out=tfplan
+        run: terraform plan ${{ inputs.action == 'destroy' && '-destroy' || '' }} -out=tfplan
 
       # Apply the saved plan
       - name: Terraform apply
         run: terraform apply tfplan
 
       - name: Save the website URL
+        if: inputs.action != 'destroy'
         id: tf_out
         run: echo "website_url=$(terraform output -raw website_url)" >> "$GITHUB_OUTPUT"
