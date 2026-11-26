@@ -1,0 +1,90 @@
+name: Terraform
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Folder in infrastructure/environments to deploy
+        type: string
+        required: true
+    secrets:
+      AWS_ROLE_ARN:
+        required: true
+      AWS_ACCOUNT_ID:
+        required: true
+    outputs:
+      website_url:
+        description: Website URL from the Terraform output
+        value: ${{ jobs.apply.outputs.website_url }}
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-southeast-1
+  TF_VERSION: "1.17.2"
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+jobs:
+  apply:
+    name: Plan and apply ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+
+    # One apply per environment at a time
+    concurrency:
+      group: terraform-apply-${{ inputs.environment }}
+      cancel-in-progress: false
+
+    env:
+      TF_VAR_aws_account_id: ${{ secrets.AWS_ACCOUNT_ID }}
+
+    defaults:
+      run:
+        working-directory: infrastructure/environments/${{ inputs.environment }}
+
+    outputs:
+      website_url: ${{ steps.tf_out.outputs.website_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          # Clean output for terraform output -raw
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActionsTerraform
+          mask-aws-account-id: true
+
+      - name: Verify AWS identity
+        working-directory: .
+        env:
+          EXPECTED_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        run: ./scripts/verify-aws-identity.sh
+
+      - name: Verify state bucket access
+        run: aws s3 ls "s3://shinn-terraform-state-foundation" > /dev/null
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform plan
+        run: terraform plan -out=tfplan
+
+      # Apply the saved plan
+      - name: Terraform apply
+        run: terraform apply tfplan
+
+      - name: Save the website URL
+        id: tf_out
+        run: echo "website_url=$(terraform output -raw website_url)" >> "$GITHUB_OUTPUT"

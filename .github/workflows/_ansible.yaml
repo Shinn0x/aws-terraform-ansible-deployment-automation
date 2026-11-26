@@ -1,0 +1,89 @@
+name: Ansible
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Environment to configure (dev or prod)
+        type: string
+        required: true
+      website_url:
+        description: URL for the health check
+        type: string
+        required: true
+    secrets:
+      AWS_ROLE_ARN:
+        required: true
+      AWS_ACCOUNT_ID:
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-southeast-1
+  SESSION_MANAGER_PLUGIN_VERSION: "1.2.896.0"
+
+jobs:
+  configure:
+    name: Configure ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+
+    # One Ansible run per environment at a time
+    concurrency:
+      group: ansible-${{ inputs.environment }}
+      cancel-in-progress: false
+
+    env:
+      TARGET_ENV: ${{ inputs.environment }}
+
+    defaults:
+      run:
+        working-directory: configuration
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActionsTerraform
+          mask-aws-account-id: true
+
+      - name: Verify AWS identity
+        working-directory: .
+        env:
+          EXPECTED_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+        run: ./scripts/verify-aws-identity.sh
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: configuration/requirements.txt
+
+      - name: Install Ansible
+        run: |
+          pip install -r requirements.txt
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Install Session Manager plugin
+        run: |
+          curl -fsSLo /tmp/session-manager-plugin.deb \
+            "https://s3.amazonaws.com/session-manager-downloads/plugin/${SESSION_MANAGER_PLUGIN_VERSION}/ubuntu_64bit/session-manager-plugin.deb"
+          sudo dpkg -i /tmp/session-manager-plugin.deb
+          session-manager-plugin --version
+
+      - name: Run the playbook
+        run: ansible-playbook playbooks/deploy-website.yml -e target_env="$TARGET_ENV"
+
+      - name: Health check
+        working-directory: .
+        env:
+          WEBSITE_URL: ${{ inputs.website_url }}
+        run: ./scripts/health-check.sh "$WEBSITE_URL"

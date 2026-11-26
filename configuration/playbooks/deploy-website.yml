@@ -4,5 +4,10 @@
   become: true
   gather_facts: false
 
+  pre_tasks:
+    - name: Wait until the instance is reachable over SSM
+      ansible.builtin.wait_for_connection:
+        timeout: 360
+
   roles:
     - webserver
