@@ -63,11 +63,15 @@ resource "aws_iam_role" "github_actions" {
 
 # Create the permissions policy from the JSON file
 resource "aws_iam_policy" "github_actions" {
-  name        = "github-actions-terraform-policy"
+  name = "github-actions-terraform-policy"
+  # Changing the description would force Terraform to replace the policy
   description = "Permissions for GitHub Actions Terraform state access"
 
+  # The account ID comes from .env, so it is never written into the repository
   policy = templatefile("${path.module}/github-actions-policy.json", {
     state_bucket_name = var.state_bucket_name
+    aws_region        = var.aws_region
+    account_id        = var.aws_account_id
   })
 }
 
