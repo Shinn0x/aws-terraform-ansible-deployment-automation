@@ -46,8 +46,13 @@ bootstrap/
     ├── main.tf
     ├── outputs.tf
     ├── github-actions-policy.json
-    ├── check-github-oidc.sh
-    └── terraform.tfvars.example
+    └── check-github-oidc.sh
+```
+
+The AWS account ID and the GitHub owner and repository IDs are not in these files. They come from `TF_VAR_*` variables in the git-ignored `.env` file at the repository root (template: `.env.example`). Load it before running any command below:
+
+```bash
+set -a && source .env && set +a
 ```
 
 ## 4. Check Whether the OIDC Provider Exists
@@ -172,6 +177,9 @@ locals {
 provider "aws" {
   region = var.aws_region
 
+  # Fail before any change if the credentials belong to a different account
+  allowed_account_ids = [var.aws_account_id]
+
   default_tags {
     tags = local.common_tags
   }
@@ -179,6 +187,8 @@ provider "aws" {
 ```
 
 `default_tags` adds `common_tags` to every resource this provider creates, so the resources in `main.tf` do not need their own `tags` blocks.
+
+`allowed_account_ids` stops `plan` and `apply` with an error if your current AWS profile points at a different account.
 
 ## 7. Terraform Variables
 
@@ -189,6 +199,16 @@ variable "aws_region" {
   description = "AWS region for the OIDC bootstrap"
   type        = string
   default     = "ap-southeast-1"
+}
+
+variable "aws_account_id" {
+  description = "AWS account this configuration may run against. Set TF_VAR_aws_account_id in .env."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]{12}$", var.aws_account_id))
+    error_message = "aws_account_id must be a 12-digit AWS account ID (aws sts get-caller-identity --query Account --output text)."
+  }
 }
 
 variable "environment" {
@@ -204,9 +224,8 @@ variable "github_owner" {
 }
 
 variable "github_owner_id" {
-  description = "Immutable GitHub owner ID"
+  description = "Immutable GitHub owner ID. Set TF_VAR_github_owner_id in .env."
   type        = string
-  default     = "REDACTED_GITHUB_OWNER_ID"
 
   validation {
     condition     = can(regex("^[0-9]+$", var.github_owner_id))
@@ -221,9 +240,8 @@ variable "github_repo" {
 }
 
 variable "github_repo_id" {
-  description = "Immutable GitHub repository ID"
+  description = "Immutable GitHub repository ID. Set TF_VAR_github_repo_id in .env."
   type        = string
-  default     = "REDACTED_GITHUB_REPO_ID"
 
   validation {
     condition     = can(regex("^[0-9]+$", var.github_repo_id))
@@ -244,6 +262,8 @@ variable "state_bucket_name" {
 }
 ```
 
+`aws_account_id`, `github_owner_id` and `github_repo_id` have no defaults, so the values are never committed. Terraform reads them from `TF_VAR_aws_account_id`, `TF_VAR_github_owner_id` and `TF_VAR_github_repo_id` in `.env`. If one is missing, `terraform plan` asks for it.
+
 The owner and repository IDs are numeric and are stored as strings. Look them up with:
 
 ```bash
@@ -251,8 +271,6 @@ gh api repos/OWNER/REPO --jq '{repo_id: .id, owner_id: .owner.id}'
 ```
 
 The `validation` blocks stop `terraform plan` early if a name is put in an ID field by mistake. A wrong ID would otherwise only show up as `AccessDenied` in the workflow.
-
-`terraform.tfvars.example` lists every variable with its default value.
 
 ## 8. Create the OIDC Provider and IAM Role
 
@@ -358,46 +376,25 @@ The trust policy controls who can assume the role.
 
 The permissions policy controls what the role can do after it is assumed.
 
-For the initial setup, the GitHub Actions role is granted access to the Terraform state bucket.
+The policy is in `github-actions-policy.json`. The file is a Terraform template. Terraform fills in:
 
-`github-actions-policy.json`
+| Placeholder | Source |
+|---|---|
+| `${state_bucket_name}` | `state_bucket_name` variable |
+| `${aws_region}` | `aws_region` variable |
+| `${account_id}` | `aws_account_id` variable, from `.env` |
 
-The file is a Terraform template. Terraform fills in `${state_bucket_name}` from the `state_bucket_name` variable, so the bucket name is set in one place only.
+So the account ID is never written into the repository.
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "AllowIdentityCheck",
-      "Effect": "Allow",
-      "Action": [
-        "sts:GetCallerIdentity"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Sid": "TerraformStateBucketAccess",
-      "Effect": "Allow",
-      "Action": [
-        "s3:ListBucket",
-        "s3:GetBucketVersioning"
-      ],
-      "Resource": "arn:aws:s3:::${state_bucket_name}"
-    },
-    {
-      "Sid": "TerraformStateObjectAccess",
-      "Effect": "Allow",
-      "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject"
-      ],
-      "Resource": "arn:aws:s3:::${state_bucket_name}/*"
-    }
-  ]
-}
-```
+| Statement | Actions | Resource |
+|---|---|---|
+| `AllowIdentityCheck` | `sts:GetCallerIdentity` | `*` |
+| `TerraformStateBucketAccess` | `s3:ListBucket`, `s3:GetBucketVersioning` | The state bucket |
+| `TerraformStateObjectAccess` | `s3:GetObject`, `s3:PutObject`, `s3:DeleteObject` | Objects in the state bucket, including the `.tflock` lock files |
+| `VpcRead` | `ec2:Describe*` calls that Terraform uses to read the VPC, subnet, internet gateway, route tables and availability zones | `*`, limited to the region by `aws:RequestedRegion`. Describe calls can't be scoped to a resource ARN. |
+| `VpcManage` | Create, modify, delete and tag the VPC, subnet, internet gateway, route table, routes and route table associations | `vpc/*`, `subnet/*`, `internet-gateway/*` and `route-table/*` ARNs in this account and region only |
+
+The EC2 action names were checked against the [AWS Service Authorization Reference](https://servicereference.us-east-1.amazonaws.com/v1/ec2/ec2.json). Stage 03 will add permissions for EC2 instances, security groups and instance IAM when that code exists.
 
 `AllowIdentityCheck` lets a workflow run `aws sts get-caller-identity` to confirm which role it is using.
 
@@ -405,11 +402,16 @@ Attach the policy in `main.tf`:
 
 ```hcl
 resource "aws_iam_policy" "github_actions" {
-  name        = "github-actions-terraform-policy"
+  name = "github-actions-terraform-policy"
+
+  # Changing the description would force Terraform to replace the policy
   description = "Permissions for GitHub Actions Terraform state access"
 
+  # The account ID comes from .env, so it is never written into the repository
   policy = templatefile("${path.module}/github-actions-policy.json", {
     state_bucket_name = var.state_bucket_name
+    aws_region        = var.aws_region
+    account_id        = var.aws_account_id
   })
 }
 
@@ -418,8 +420,6 @@ resource "aws_iam_role_policy_attachment" "github_actions" {
   policy_arn = aws_iam_policy.github_actions.arn
 }
 ```
-
-This policy currently grants state bucket access only. Additional permissions for provisioning AWS infrastructure will be added in a later stage.
 
 ## 11. Terraform Outputs
 
@@ -471,7 +471,14 @@ Retrieve the role ARN:
 terraform output github_actions_role_arn
 ```
 
-The role ARN is used by the GitHub Actions workflow.
+The role ARN contains the account ID, so the workflow reads it from the `AWS_ROLE_ARN` repository secret, not a variable. Secret values are masked in workflow logs.
+
+```bash
+gh secret set AWS_ROLE_ARN --body "$(terraform output -raw github_actions_role_arn)"
+gh secret set AWS_ACCOUNT_ID --body "$TF_VAR_aws_account_id"
+```
+
+The README lists every secret the workflow uses.
 
 ## 13. Verify the IAM Role
 
@@ -511,7 +518,8 @@ The role's trust policy now allows only the `main` branch of this repository.
 - Keep Terraform state private and protected.
 - Review Terraform plans before applying changes to IAM resources.
 - The trust policy only matches workflows running on `main`. Jobs that use a GitHub `environment:`, or that are triggered by `pull_request`, send a different `sub` claim and will be denied. Add those subjects to the trust policy if a workflow needs them.
-- This bootstrap uses local Terraform state (`terraform.tfstate`), which is git-ignored. Back it up. If it is lost, the resources must be imported again.
+- This bootstrap uses local Terraform state (`terraform.tfstate`), which is git-ignored. Back it up. If it is lost, the resources must be imported again. The state contains the account ID and GitHub IDs, so never commit it.
+- Keep the account ID and GitHub IDs in `.env` locally and in repository secrets for CI, not in `.tf` files, `.tfvars` files or repository variables.
 
 ## Completion Checklist
 
@@ -523,11 +531,13 @@ The role's trust policy now allows only the `main` branch of this repository.
 - [x] IAM role verified
 - [x] GitHub Actions OIDC role tested successfully
 - [x] Temporary test branch deleted
-- [ ] Configure Terraform remote state
-- [ ] Add infrastructure provisioning permissions
+- [x] Account ID and GitHub IDs moved to `.env` and repository secrets
+- [x] VPC provisioning permissions added
+- [ ] EC2, security group and instance IAM permissions added
+- [ ] OIDC bootstrap state migrated from local storage to S3
 
 ## Next Stage
 
-Configure Terraform remote state using the S3 bucket created in Section 01.
+Section 03 uses the S3 bucket from Section 01 as the remote backend for the VPC (`vpc/terraform.tfstate`).
 
-After the backend is configured, migrate the OIDC bootstrap state from local storage to S3 and continue with infrastructure provisioning.
+The OIDC bootstrap state can later be migrated from local storage to S3 in the same way.
