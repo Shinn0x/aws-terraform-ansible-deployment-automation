@@ -25,7 +25,7 @@ output "public_ip" {
 
 output "website_url" {
   description = "URL of the website"
-  value       = "https://${aws_route53_record.agex.fqdn}"
+  value       = "https://${module.website_dns.fqdn}"
 }
 
 output "ansible_bucket_name" {

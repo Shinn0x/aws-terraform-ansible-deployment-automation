@@ -39,7 +39,7 @@ files=(
   infrastructure/README.md
 )
 
-for module in vpc security-group iam ec2 s3; do
+for module in vpc security-group iam ec2 s3 route53; do
   files+=(
     "infrastructure/modules/$module/README.md"
     "infrastructure/modules/$module/main.tf"

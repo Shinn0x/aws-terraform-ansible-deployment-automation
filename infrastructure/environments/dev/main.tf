@@ -40,18 +40,17 @@ module "ansible_bucket" {
   name = "${local.name_prefix}-ansible-ssm"
 }
 
-# Find the public hosted zone
-data "aws_route53_zone" "main" {
-  name         = var.domain_name
-  private_zone = false
+# Point the website name to the web server
+module "website_dns" {
+  source = "../../modules/route53"
+
+  domain_name = var.domain_name
+  hostname    = var.website_hostname
+  ip_address  = module.web_server.public_ip
 }
 
-# Point the website name to the web server
-resource "aws_route53_record" "agex" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = var.website_hostname
-  type    = "A"
-  ttl     = 300
-
-  records = [module.web_server.public_ip]
+# Keep the existing record. Without this, Terraform deletes and recreates it.
+moved {
+  from = aws_route53_record.agex
+  to   = module.website_dns.aws_route53_record.this
 }

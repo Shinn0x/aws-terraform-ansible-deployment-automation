@@ -47,7 +47,7 @@ flowchart LR
 │   ├── 01-state-bucket/      S3 bucket for Terraform state
 │   └── 02-github-oidc/       OIDC provider, CI role and policies
 ├── infrastructure/
-│   ├── modules/              vpc, security-group, iam, ec2, s3
+│   ├── modules/              vpc, security-group, iam, ec2, s3, route53
 │   └── environments/         dev, prod (Terraform runs here)
 ├── configuration/            Ansible inventory, playbook, webserver role
 ├── application/website/      static website
