@@ -32,3 +32,19 @@ module "web_server" {
   security_group_id     = module.web_security_group.security_group_id
   instance_profile_name = module.web_iam.instance_profile_name
 }
+
+# Find the public hosted zone
+data "aws_route53_zone" "main" {
+  name         = var.domain_name
+  private_zone = false
+}
+
+# Point the website name to the web server
+resource "aws_route53_record" "agex" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = var.website_hostname
+  type    = "A"
+  ttl     = 300
+
+  records = [module.web_server.public_ip]
+}

@@ -25,5 +25,5 @@ output "public_ip" {
 
 output "website_url" {
   description = "URL of the website"
-  value       = "http://${module.web_server.public_dns}"
+  value       = "http://${aws_route53_record.agex.fqdn}"
 }

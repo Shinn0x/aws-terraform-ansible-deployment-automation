@@ -43,3 +43,17 @@ variable "instance_type" {
   type        = string
   default     = "t3.micro"
 }
+
+# Route 53 hosted zone
+variable "domain_name" {
+  description = "Route 53 hosted zone name"
+  type        = string
+  default     = "localhostshinn.xyz"
+}
+
+# Website DNS name
+variable "website_hostname" {
+  description = "DNS name for the website"
+  type        = string
+  default     = "agex.localhostshinn.xyz"
+}

@@ -324,6 +324,7 @@ Each environment calls all four modules. The settings that differ:
 | VPC CIDR | `10.20.0.0/16` | `10.30.0.0/16` |
 | Public subnet | `10.20.1.0/24` | `10.30.1.0/24` |
 | Instance type | `t3.micro` | `t3.micro` |
+| Website | `http://agex-dev.localhostshinn.xyz` | `http://agex.localhostshinn.xyz` |
 | Applied by | GitHub Actions on push to `main`, a manual run, or locally | A manual run of the workflow, or locally |
 
 Both states use the S3 native lock file (`use_lockfile = true`, Terraform 1.10 or later). Resource names start with `<project_name>-<environment>`, for example `aws-terraform-ansible-deployment-automation-dev-vpc`. The environment name is fixed in each folder's `locals.tf`, so the dev folder can't create prod resources by mistake.
@@ -368,7 +369,7 @@ gh workflow enable terraform.yaml
 
 ### CI Permissions
 
-The GitHub Actions role can only manage the VPC so far (`VpcRead` and `VpcManage` in `github-actions-policy.json`). Until it also gets permissions for security groups, IAM roles and instance profiles, EC2 instances, and reading the AMI parameter from SSM, the `deploy` job stops at `terraform plan` with `AccessDenied`. Nothing is created in that case.
+The GitHub Actions role can only manage the VPC so far (`VpcRead` and `VpcManage` in `github-actions-policy.json`). Until it also gets permissions for security groups, IAM roles and instance profiles, EC2 instances, Route 53 records, and reading the AMI parameter from SSM, the `deploy` job stops at `terraform plan` with `AccessDenied`. Nothing is created in that case.
 
 ## Section 04 — Configuration and Deployment
 
