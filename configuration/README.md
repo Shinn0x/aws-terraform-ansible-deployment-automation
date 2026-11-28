@@ -60,4 +60,4 @@ ansible-lint
 
 ## Let's Encrypt Limit
 
-Let's Encrypt issues about 5 certificates a week for the same domain. A new instance needs a new certificate, so don't recreate an instance many times in one week. To test, add `--staging` to the certbot command in `roles/webserver/tasks/main.yml`. Browsers don't trust staging certificates, so remove it afterwards.
+Let's Encrypt issues about 5 certificates a week for the same hostname. A new instance needs a new certificate, so don't recreate an instance many times in one week. To test, add `--staging` to the certbot command in `roles/webserver/tasks/main.yml`. Browsers don't trust staging certificates, so remove it afterwards.

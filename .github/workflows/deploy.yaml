@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - "infrastructure/**"
-      - "bootstrap/02-github-oidc/**"
+      - "ci-policies/**"
       - "configuration/**"
       - "application/**"
       - "scripts/**"
@@ -19,7 +19,7 @@ on:
       - main
     paths:
       - "infrastructure/**"
-      - "bootstrap/02-github-oidc/**"
+      - "ci-policies/**"
       - "configuration/**"
       - "application/**"
       - "scripts/**"

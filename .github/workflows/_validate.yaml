@@ -30,11 +30,19 @@ jobs:
 
       - name: Terraform validate
         run: |
-          for dir in bootstrap/02-github-oidc infrastructure/environments/dev infrastructure/environments/prod; do
+          for dir in infrastructure/environments/dev infrastructure/environments/prod; do
             echo "::group::$dir"
             terraform -chdir="$dir" init -backend=false
             terraform -chdir="$dir" validate
             echo "::endgroup::"
+          done
+
+      # The role is applied from outside CI, so catch broken JSON here
+      - name: CI policy JSON check
+        run: |
+          for file in ci-policies/*.json; do
+            jq empty "$file"
+            echo "$file is valid JSON"
           done
 
   ansible:

@@ -16,26 +16,12 @@ files=(
   .gitignore
   .env.example
 
-  # Section 01: S3 state bucket
-  bootstrap/README.md
-  bootstrap/01-state-bucket/README.md
-  bootstrap/01-state-bucket/create-state-bucket.sh
-  bootstrap/01-state-bucket/encryption.json
-  bootstrap/01-state-bucket/lifecycle.json
-  bootstrap/01-state-bucket/ownership-controls.json
-  bootstrap/01-state-bucket/public-access-block.json
+  # CI role policies
+  ci-policies/README.md
+  ci-policies/github-actions-policy.json
+  ci-policies/github-actions-ansible-policy.json
 
-  # Section 02: GitHub OIDC
-  bootstrap/02-github-oidc/README.md
-  bootstrap/02-github-oidc/providers.tf
-  bootstrap/02-github-oidc/variables.tf
-  bootstrap/02-github-oidc/main.tf
-  bootstrap/02-github-oidc/outputs.tf
-  bootstrap/02-github-oidc/github-actions-policy.json
-  bootstrap/02-github-oidc/github-actions-ansible-policy.json
-  bootstrap/02-github-oidc/check-github-oidc.sh
-
-  # Section 03: Terraform infrastructure
+  # Terraform infrastructure
   infrastructure/README.md
 )
 
@@ -60,7 +46,7 @@ for env in dev prod; do
 done
 
 files+=(
-  # Section 04: Ansible configuration
+  # Ansible configuration
   configuration/README.md
   configuration/ansible.cfg
   configuration/.ansible-lint
@@ -77,7 +63,7 @@ files+=(
   configuration/roles/webserver/templates/agex.conf.j2
   configuration/roles/webserver/templates/agex-ssl.conf.j2
 
-  # Section 04: Static website
+  # Static website
   application/README.md
   application/website/index.html
   application/website/about.html
@@ -90,7 +76,7 @@ files+=(
   application/website/css/style.css
   application/website/js/main.js
 
-  # Section 05: Scripts
+  # Scripts
   scripts/README.md
   scripts/create-structure.sh
   scripts/health-check.sh

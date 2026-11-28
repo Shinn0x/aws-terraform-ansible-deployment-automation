@@ -49,9 +49,9 @@ Each environment has the same files:
 | Public subnet | `10.20.1.0/24` | `10.30.1.0/24` |
 | Instance type | `t3.micro` | `t3.micro` |
 | Website | `https://agex-dev.localhostshinn.xyz` | `https://agex.localhostshinn.xyz` |
-| Deployed by | Every push to `main` | A manual workflow run |
+| Deployed by | A push to `main` that changes deployed files | A manual workflow run |
 
-- State is in `s3://shinn-terraform-state-foundation`, locked with the S3 lock file (`use_lockfile`).
+- State is in `s3://shinn-terraform-state-foundation`, locked with the S3 lock file (`use_lockfile`). The bucket is created once, outside this repository. See [AWS setup](../ci-policies/README.md#set-up).
 - Resource names start with `<project_name>-<environment>`, for example `aws-terraform-ansible-deployment-automation-dev-vpc`.
 - The environment name is fixed in `locals.tf`, so the dev folder can't create prod resources.
 
