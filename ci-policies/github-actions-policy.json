@@ -2,33 +2,6 @@
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "AllowIdentityCheck",
-            "Effect": "Allow",
-            "Action": [
-                "sts:GetCallerIdentity"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "TerraformStateBucketAccess",
-            "Effect": "Allow",
-            "Action": [
-                "s3:ListBucket",
-                "s3:GetBucketVersioning"
-            ],
-            "Resource": "arn:aws:s3:::${state_bucket_name}"
-        },
-        {
-            "Sid": "TerraformStateObjectAccess",
-            "Effect": "Allow",
-            "Action": [
-                "s3:GetObject",
-                "s3:PutObject",
-                "s3:DeleteObject"
-            ],
-            "Resource": "arn:aws:s3:::${state_bucket_name}/*"
-        },
-        {
             "Sid": "VpcRead",
             "Effect": "Allow",
             "Action": [

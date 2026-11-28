@@ -5,7 +5,7 @@
 | File | Runs |
 |---|---|
 | `deploy.yaml` | Triggers, then validate → terraform → ansible |
-| `_validate.yaml` | `terraform fmt -check`, `terraform validate` for each root, `ansible-lint`. No AWS access. |
+| `_validate.yaml` | `terraform fmt -check`, `terraform validate` for each environment, a JSON check of `ci-policies/`, `ansible-lint`. No AWS access. |
 | `_terraform.yaml` | `terraform plan` and `apply`, or a destroy, for one environment. Outputs the website URL. |
 | `_ansible.yaml` | The playbook over SSM, then `scripts/health-check.sh` |
 
@@ -13,7 +13,7 @@ Files that start with `_` are only called by `deploy.yaml`.
 
 ## When It Runs
 
-It runs when files change under `infrastructure/`, `bootstrap/02-github-oidc/`, `configuration/`, `application/`, `scripts/` or `.github/workflows/`. Changes to `.md` files don't start it.
+It runs when files change under `infrastructure/`, `ci-policies/`, `configuration/`, `application/`, `scripts/` or `.github/workflows/`. Changes to `.md` files don't start it.
 
 | Event | Validate | Terraform and Ansible |
 |---|---|---|
@@ -51,14 +51,14 @@ gh run watch
 
 - **Terraform:** logs in with OIDC, checks the identity with `scripts/verify-aws-identity.sh`, then runs `plan -out=tfplan` (`plan -destroy` for a destroy) and `apply tfplan` in `infrastructure/environments/<env>`.
 - **Ansible:** logs in with the same role, installs Python 3.13, the pinned packages from `configuration/requirements.txt` and Session Manager plugin `1.2.896.0`, runs `deploy-website.yml`, then the health check.
-- Runs for the same environment wait in a queue. They never run at the same time.
+- Runs for the same environment never run at the same time. A new run waits until the current one finishes.
 - If Ansible fails, Terraform has already finished. Fix the problem and re-run only the failed job.
 
 ## Secrets
 
 | Secret | Value |
 |---|---|
-| `AWS_ROLE_ARN` | `terraform -chdir=bootstrap/02-github-oidc output -raw github_actions_role_arn` |
+| `AWS_ROLE_ARN` | ARN of `github-actions-terraform-role`. See [`ci-policies/`](../../ci-policies/README.md). |
 | `AWS_ACCOUNT_ID` | Same as `TF_VAR_aws_account_id` in `.env` |
 
 The account ID is masked in the logs.
